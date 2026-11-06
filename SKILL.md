@@ -56,7 +56,9 @@ This folder (where this file is) is `SKILL_DIR` in `tools.md`.
   - `vfx-mesh-shapes.md` for crescent, ring, swirl and dome meshes;
   - `vfx-camera-world.md` for camera, screen and ground reactions, and a cast
     pose from code;
-  - [Asset library](references/asset-library.md) for reusing project assets from an image reference.
+  - [Asset library](references/asset-library.md) when matching an image or clip
+    and a VFX pack is available. Inspect the bundled or project .rbxm first for
+    useful meshes, textures, emitters, beams, and trails.
   - [Ground-matched rocks](references/vfx-ground-rocks.md) for craters,
     landing debris, and projectile ground trails;
   - `vfx-rendered-flipbooks.md` for a sheet rendered from a 3D scene;
