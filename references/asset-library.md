@@ -2,6 +2,8 @@
 
 Use this when an effect must follow an image reference and the project has a VFX gallery or a collection of prefabs.
 
+The bundled [VFX Pack](../assets/VFX-Pack-KanzeroGaming.rbxm) can be imported into a Studio test place as a source gallery.
+
 1. Break the image into roles such as silhouette, underlay, core, directional streak, and residue. Select the smallest set of parts, meshes, beams, or emitters that can reproduce those roles. Compare each candidate's shape at the intended gameplay distance.
 2. Treat the gallery as a source collection. Inspect it read-only and work in the explicitly named destination place. Save reusable selections as named `.rbxm` prefabs. For a Beam or Trail, include both of its Attachment endpoints and verify that the links survive import.
 3. Review embedded scripts and dependencies before moving a prefab into a game. Extract visual instances and use the destination project's effect player for emission and cleanup. Keep unrelated camera, Lighting, and gameplay behavior out of the port.
