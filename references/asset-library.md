@@ -6,7 +6,7 @@ The bundled [VFX Pack](../assets/VFX-Pack-KanzeroGaming.rbxm) works as a source 
 
 ## Find and extract a layer
 
-Import the pack into a test place using **Explorer → Insert → Import Roblox Model** and inspect the relevant parts in Studio. Alternatively, use [Lune](https://lune-org.github.io/docs/) to search and extract from the model file without opening it in Studio. Run these commands from the skill folder.
+Import the pack into a test place using **Explorer → Insert → Import Roblox Model** and inspect the relevant parts in Studio. Alternatively, use [Lune](https://lune-org.github.io/docs/) to search and extract from the model file without opening it in Studio. Run these commands from the skill folder. With [Aftman](https://github.com/LPGhatguy/aftman), run `aftman install` there first; `aftman.toml` pins the Lune version the script was tested with.
 
 ~~~sh
 lune run scripts/inspect-pack.luau search assets/VFX-Pack-KanzeroGaming.rbxm "ice spike"

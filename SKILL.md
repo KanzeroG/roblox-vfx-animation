@@ -43,6 +43,8 @@ This folder (where this file is) is `SKILL_DIR` in `tools.md`.
 | `scripts/blender_job.py`, `scripts/vfx_blender.py` | Runs a Blender job with the `fx.*` texture and mesh helpers. |
 | `scripts/texture-tool.mjs` | Checks flipbook sheets; previews textures in Studio without uploading. |
 | `scripts/upload.mjs` | Open Cloud uploads (textures, meshes, animations). |
+| `scripts/inspect-pack.luau` | Searches the VFX Pack and extracts one model from it with Lune (pinned in `aftman.toml`). |
+| `assets/VFX-Pack-KanzeroGaming.rbxm` | The bundled VFX Pack: emitters, meshes, beams, and trails to select layers from. |
 
 ## Quick reference
 

@@ -1,0 +1,3 @@
+# Tools used by this skill's scripts. Run `aftman install` once in this folder.
+[tools]
+lune = "lune-org/lune@0.10.5"
