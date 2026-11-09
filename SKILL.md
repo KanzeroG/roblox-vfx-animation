@@ -3,110 +3,104 @@ name: roblox-vfx-animation
 description: Use for any Roblox visual effect or animation work through a Roblox Studio MCP - particles, beams, trails, slashes, hits, explosions, spells, auras, abilities, combat effects, camera shake, VFX textures and flipbooks, and R15/R6/creature animations (attacks, idles, walks, runs). Load before building or tuning any effect or animation, even a small one.
 ---
 
-# Roblox animation and VFX
+# Roblox VFX and animation
 
-Works with a stock Roblox Studio MCP plus a shell. Its references record what experienced Roblox
-VFX artists actually do, measured from about 5,000 particle emitters in their
-published effects. Use the observations to tune silhouette, color and value,
-layer timing, and motion against the place's lighting. Review the result in the
-viewport at the distance the viewer will see it.
+Works with a stock Roblox Studio MCP plus a shell. The references record what
+experienced Roblox VFX artists do, measured from about 5,000 particle emitters
+in published effects.
 
-**Read `references/tools.md` first, every time.** The references were written
-for the original toolkit (`build_instances`, `capture_moments`, the `animation`
-and `blender` tools, `upload_assets`). `tools.md` says what to use instead with
-your Studio MCP and this skill's scripts. Wherever a reference names an original
-tool, do what `tools.md` maps it to.
+**Read `references/tools.md` first, every time.** The references name tools from
+the original toolkit (`build_instances`, `capture_moments`, the `animation` and
+`blender` tools, `upload_assets`). `tools.md` maps each one to the Studio MCP
+and this skill's scripts. This folder is `SKILL_DIR` in `tools.md`.
 
-This folder (where this file is) is `SKILL_DIR` in `tools.md`.
+## VFX workflow
 
-## What's here
+Follow these steps for every effect: a hit, slash, explosion, spell, aura, or
+pickup.
+
+1. **Brief.** Settle what the effect is for, where it plays (a gameplay event
+   or an Edit-mode preview), the viewing distance, and the reference images.
+   Check the place's lighting. Load [vfx-design.md](references/vfx-design.md)
+   and [vfx-craft.md](references/vfx-craft.md).
+2. **Plan the layers.** Break the effect, or its reference, into roles in the
+   order they appear: anticipation, flash or core, body, rim, glow, debris,
+   residue. Give each role its timing and budget. Keep silhouettes asymmetric,
+   with tapers.
+3. **Source each layer**, cheapest first:
+   - **The VFX Pack or a project library.** Search
+     `assets/VFX-Pack-KanzeroGaming.rbxm` or the project's pack for meshes,
+     emitters, beams, and trails ([asset-library.md](references/asset-library.md)).
+   - **Its own sprites or flipbook.** If a PhotoCraft MCP (`mcp__photocraft__*`)
+     or `photocraft-cli` is available, use [vfx-photocraft.md](references/vfx-photocraft.md).
+     Draw white layers from polygon points, or generate a layer with Codex and
+     clean it in PhotoCraft. Otherwise draw with Blender and numpy, or generate
+     from a mockup ([vfx-textures.md](references/vfx-textures.md)). For a lit
+     volume, render a flipbook from a 3D scene
+     ([vfx-rendered-flipbooks.md](references/vfx-rendered-flipbooks.md)).
+   - **Meshes** such as crescents, rings, swirls, and domes:
+     [vfx-mesh-shapes.md](references/vfx-mesh-shapes.md).
+4. **Build in Studio.** Install the emit module (`templates/vfx/emit.lua`) and
+   build the instances with `templates/vfx/build.lua`. Load the topics the
+   effect needs:
+   - [vfx-motion.md](references/vfx-motion.md) for projectiles, trails, beams,
+     slashes, dashes, orbs, and auras;
+   - [vfx-camera-world.md](references/vfx-camera-world.md) for camera shake,
+     FOV, impact frames, lights, craters, and cast poses;
+   - [vfx-ground-rocks.md](references/vfx-ground-rocks.md) for debris that
+     matches the surface;
+   - measured archives: [Hollow Purple](references/hollow-purple/README.md),
+     [Explosion](references/explosion-patterns/README.md),
+     [Lightning](references/lightning-sequence.md), and
+     [team patterns](references/place1-reference-patterns.md).
+5. **Review.** Hold 4–6 meaningful moments with `templates/vfx/capture.lua`.
+   Screenshot them from close up and from the viewing distance, then check
+   full-speed timing ([vfx-polish.md](references/vfx-polish.md)). When matching
+   a reference, compare at most twice, then fix what the comparison shows most
+   clearly.
+6. **Deliver.** Leave a [Workspace Edit-mode preview](references/tools.md#workspace-preview-in-studio-edit-mode),
+   or wire the effect into the project's VFX entry point and test it in the
+   mode it runs in. Upload only settled textures, meshes, and animations.
+   Every upload is permanent and moderated, so say how many you will upload
+   first. Report the preview mode, the checks you completed, how to replay
+   the effect, and what is approximated. Roblox has no custom shaders, so
+   distortion, heat haze, and refraction can only be approximated.
+
+Rules for every effect:
+- A burst `ParticleEmitter` has `Rate = 0` and fires through the emit module
+  (`EmitCount`, `EmitDelay`).
+- Effects are presentation. The server fires an `UnreliableRemoteEvent` with
+  the effect's name and a CFrame, and each client calls `VFX.play`. Damage
+  never waits on an effect.
+
+## Animation workflow
+
+1. Check which rig the place's players use (R15 or R6). Load
+   [character-animation.md](references/character-animation.md). For a creature
+   or any non-stock model, also load
+   [creature-animation.md](references/creature-animation.md), read its rig with
+   `scripts/read_rig.lua`, and pass `--rig-json`.
+2. Write the pose JSON from the closest recipe. Run `scripts/animate.mjs` with
+   `--sheet`, look at the sheet, and fix it until every check passes.
+3. Send the Luau it writes with `execute_luau`, and preview the animation on a
+   dummy.
+4. Load tracks through an `Animator` on a `Humanoid` or `AnimationController`,
+   and set `AnimationTrack.Priority` deliberately. Fire gameplay cues, such as
+   a hit landing, and the attack's effect from `GetMarkerReachedSignal()` on a
+   keyframe's `markers`. A keyframe's `name` is not a marker. Playback details:
+   [full.md](references/full.md).
+
+## Files
 
 | Path | What it is |
 | --- | --- |
-| `references/tools.md` | How to do every step with the Studio MCP, the shell and Blender. |
-| `references/vfx-design.md` | What the effect is for, palette, value, brightness, layers, timing. |
-| `references/vfx-craft.md` | Where effects live, the emit module, layer skeletons, budgets, how to check an effect. |
-| `references/vfx-textures.md` | Drawing the effect's own textures and flipbooks (Blender + numpy). |
-| `references/vfx-photocraft.md` | Flipbook layers drawn in headless PhotoCraft from polygon points, or generated with Codex and fixed there. |
-| `references/vfx-motion.md` | Projectiles, volleys, trails, beams, slashes, dashes, orbs, auras. |
-| `references/vfx-mesh-shapes.md` | Crescent and ring meshes, swirls, domes, ground waves, made in Blender. |
-| `references/vfx-camera-world.md` | Camera shake, FOV, impact frames, lights, craters, cast poses. |
-| `references/vfx-rendered-flipbooks.md` | Flipbooks rendered from a 3D scene. |
-| `references/vfx-reference.md` | Matching a reference clip (partly: see `tools.md`). |
-| `references/character-animation.md` | The pose format and tested R15/R6 recipes. |
-| `references/creature-animation.md` | Rigs, `waves`, `gait`, and creature recipes. |
-| `references/full.md` | Animation playback: tracks, priorities, blending, markers. |
-| `templates/vfx/emit.lua` | The player module (`VFX.play`, `VFX.emit`, handles with slow-mo and hitstop). |
-| `templates/vfx/build.lua` | Builds instances from the references' JSON steps. |
-| `templates/vfx/capture.lua` | Holds a playing effect at chosen moments for screenshots. |
-| `scripts/animate.mjs` | Pose compiler + motion checks + contact sheet + Luau output (Node 18+). |
+| `references/` | The topic guides linked above, plus `tools.md`. |
+| `templates/vfx/` | `emit.lua` (`VFX.play`, `VFX.emit`, slow-mo, hitstop), `build.lua` (instances from JSON steps), `capture.lua` (holds moments for screenshots). |
+| `scripts/animate.mjs` | Pose compiler, motion checks, contact sheet, and Luau output (Node 18+). |
 | `scripts/read_rig.lua` | Reads a creature's rig for `animate.mjs --rig-json`. |
-| `scripts/blender_job.py`, `scripts/vfx_blender.py` | Runs a Blender job with the `fx.*` texture and mesh helpers. |
-| `scripts/texture-tool.mjs` | Checks flipbook sheets; previews textures in Studio without uploading. |
-| `scripts/upload.mjs` | Open Cloud uploads (textures, meshes, animations). |
-| `scripts/photocraft/` | PhotoCraft MCP stdio client, the sword-slash layer generator, a sheet margin verifier and a zoomed review render (Node 18+). |
-| `scripts/inspect-pack.luau` | Searches the VFX Pack and extracts one model from it with Lune (pinned in `aftman.toml`). |
-| `assets/VFX-Pack-KanzeroGaming.rbxm` | The bundled VFX Pack: emitters, meshes, beams, and trails to select layers from. |
-
-## Quick reference
-
-- **Any visual effect** (a hit, slash, explosion, spell, aura or pickup): load
-  `references/tools.md`, `references/vfx-design.md` and
-  `references/vfx-craft.md`, plus the topics it needs:
-  - [VFX textures](references/vfx-textures.md) to draw or generate custom
-    sprites. For generated textures, make a visual mockup first and follow
-    the Codex CLI path documented there;
-  - [PhotoCraft layers](references/vfx-photocraft.md) whenever a PhotoCraft MCP
-    (`mcp__photocraft__*`) or `photocraft-cli` is available and the effect needs
-    its own sprites or flipbook. Split the effect into white layers (core, body,
-    rim, glow), draw drawn matter procedurally from polygon points, or generate a
-    layer with Codex and clean it there when the look matters more than exact
-    geometry. Run its margin check, review render and the sheet checker before
-    delivering;
-  - `vfx-motion.md` for anything that travels, sweeps or is held;
-  - `vfx-mesh-shapes.md` for crescent, ring, swirl and dome meshes;
-  - `vfx-camera-world.md` for camera, screen and ground reactions, and a cast
-    pose from code;
-  - [Asset library](references/asset-library.md) when matching an image or clip
-    and a VFX pack is available. Inspect the bundled or project .rbxm first for
-    useful meshes, textures, emitters, beams, and trails.
-  - [Ground-matched rocks](references/vfx-ground-rocks.md) for craters,
-    landing debris, and projectile ground trails;
-  - `vfx-rendered-flipbooks.md` for a sheet rendered from a 3D scene;
-  - `vfx-reference.md` when the user gives a reference clip.
-  - [Hollow Purple archive](references/hollow-purple/README.md) for wind,
-    lightning, the release handoff, and measured particle settings. Use these
-    local files as the reference.
-  - [Explosion1 and MainExplosion archive](references/explosion-patterns/README.md)
-    for layered blast motion, burst timing, and measured emitter settings.
-  - [Lightning sequence](references/lightning-sequence.md) for cloud buildup, timed pulses, and a camera-free port.
-  - [Archived team VFX patterns](references/place1-reference-patterns.md) for
-    sustained orbs, staggered accents, and Workspace previews in Studio Edit mode.
-- **Polish pass:** use [vfx-polish.md](references/vfx-polish.md) for impact
-  silhouettes, traveling energy, and a frame-by-frame review. Check 4–6 meaningful
-  moments from close up and the intended viewing distance, then check full-speed timing.
-- **Delivery mode:** follow the [Workspace Edit-mode workflow](references/tools.md#workspace-preview-in-studio-edit-mode)
-  for a preview the artist can inspect without Play. For gameplay integration, use the
-  project's VFX entry point and test in the mode the effect actually runs in.
-- **A character animation:** load `references/character-animation.md` and
-  `references/tools.md`; write the pose JSON from the closest recipe; run
-  `scripts/animate.mjs` with `--sheet` and look at the sheet; fix until every
-  check passes; send the Luau it writes with `execute_luau`; preview on a
-  dummy. Check which rig (R15 or R6) the place's players use first.
-- **A creature or any non-stock model:** also load
-  `references/creature-animation.md`, read its rig with `scripts/read_rig.lua`
-  and pass `--rig-json`.
-- Load tracks through an `Animator` on a `Humanoid` or `AnimationController`;
-  set `AnimationTrack.Priority` deliberately.
-- Use `GetMarkerReachedSignal()` for gameplay cues (a hit landing), from a
-  keyframe's `markers`; a keyframe's `name` is not a marker. Play an attack's
-  effect from its marker, not a timer.
-- A burst `ParticleEmitter` usually has `Rate = 0` and fires from
-  `EmitCount`/`EmitDelay` through the emit module.
-- Effects are presentation: the server fires an `UnreliableRemoteEvent` with
-  the effect's name and a CFrame, each client calls `VFX.play`. Never let
-  damage wait on an effect.
-- Upload only settled textures, meshes and animations: every upload is
-  permanent and moderated. Say how many you will upload first.
-
-Report the preview mode, the visible checks you completed, and how to inspect or replay the effect.
+| `scripts/blender_job.py`, `scripts/vfx_blender.py` | Run a Blender job with the `fx.*` texture and mesh helpers. |
+| `scripts/photocraft/` | PhotoCraft MCP stdio client, sword-slash layer generator, sheet margin verifier, and review render. |
+| `scripts/texture-tool.mjs` | Checks flipbook sheets, and previews textures in Studio without uploading. |
+| `scripts/upload.mjs` | Open Cloud uploads of textures, meshes, and animations. |
+| `scripts/inspect-pack.luau` | Searches the VFX Pack and extracts one model, with Lune (pinned in `aftman.toml`). |
+| `assets/VFX-Pack-KanzeroGaming.rbxm` | The bundled VFX Pack of emitters, meshes, beams, and trails. |
