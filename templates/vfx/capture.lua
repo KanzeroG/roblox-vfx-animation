@@ -1,7 +1,7 @@
 --!strict
 -- VFXCapture: see a playing effect at chosen moments, one screenshot each.
 --
--- Port of the original capture_moments for any
+-- Port of the original toolkit's moment capture for any
 -- Studio MCP that has execute_luau and screen_capture. A screenshot takes most of a
 -- second, longer than a whole burst, so the effect is held still at each moment
 -- instead of caught in passing.

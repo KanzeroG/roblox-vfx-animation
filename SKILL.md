@@ -1,6 +1,6 @@
 ---
 name: roblox-vfx-animation
-description: Use for any Roblox visual effect or animation work through a Roblox Studio MCP - particles, beams, trails, slashes, hits, explosions, spells, auras, abilities, combat effects, camera shake, VFX textures and flipbooks, and R15/R6/creature animations (attacks, idles, walks, runs). Load before building or tuning any effect or animation, even a small one.
+description: Build and tune Roblox visual effects and animations through a Roblox Studio MCP - particles, beams, trails, slashes, hits, explosions, spells, auras, abilities, combat and skill effects, camera shake, impact frames, VFX textures, sprite sheets and 4x4 flipbooks (drawn in PhotoCraft, Blender or generated with Codex), picking layers from a VFX pack, and R15/R6, NPC and creature animations (attacks, idles, walks, runs, rigging loose parts). Use it whenever the user asks for any Roblox effect or animation, even a small one or one phrased casually ("bikin vfx", "buatkan efek slash", "animasi serang", "efek skill"), before writing any emitter, texture or KeyframeSequence.
 ---
 
 # Roblox VFX and animation
@@ -9,10 +9,9 @@ Works with a stock Roblox Studio MCP plus a shell. The references record what
 experienced Roblox VFX artists do, measured from about 5,000 particle emitters
 in published effects.
 
-**Read `references/tools.md` first, every time.** The references name tools from
-the original toolkit (`build_instances`, `capture_moments`, the `animation` and
-`blender` tools, `upload_assets`). `tools.md` maps each one to the Studio MCP
-and this skill's scripts. This folder is `SKILL_DIR` in `tools.md`.
+Read [references/tools.md](references/tools.md) first: it sets up the emit,
+build and capture modules, and shows how each step runs with the Studio MCP and
+this skill's scripts. This folder is `SKILL_DIR` there.
 
 ## VFX workflow
 
@@ -78,7 +77,8 @@ Rules for every effect:
 1. Check which rig the place's players use (R15 or R6). Load
    [character-animation.md](references/character-animation.md). For a creature
    or any non-stock model, also load
-   [creature-animation.md](references/creature-animation.md), read its rig with
+   [creature-animation.md](references/creature-animation.md). Join loose parts
+   into a rig with `scripts/rig_model.lua`, read the rig with
    `scripts/read_rig.lua`, and pass `--rig-json`.
 2. Write the pose JSON from the closest recipe. Run `scripts/animate.mjs` with
    `--sheet`, look at the sheet, and fix it until every check passes.
@@ -89,6 +89,9 @@ Rules for every effect:
    a hit landing, and the attack's effect from `GetMarkerReachedSignal()` on a
    keyframe's `markers`. A keyframe's `name` is not a marker. Playback details:
    [full.md](references/full.md).
+5. An NPC needs its own loader: put `templates/npc/ModelAnimate.server.lua` in
+   the model and wire its animations through attributes
+   ([character-animation.md](references/character-animation.md#npcs)).
 
 ## Files
 
@@ -97,7 +100,9 @@ Rules for every effect:
 | `references/` | The topic guides linked above, plus `tools.md`. |
 | `templates/vfx/` | `emit.lua` (`VFX.play`, `VFX.emit`, slow-mo, hitstop), `build.lua` (instances from JSON steps), `capture.lua` (holds moments for screenshots). |
 | `scripts/animate.mjs` | Pose compiler, motion checks, contact sheet, and Luau output (Node 18+). |
+| `scripts/rig_model.lua` | Joins a model's loose parts into a Motor6D rig with a root, controller and `AnimRig` declarations. |
 | `scripts/read_rig.lua` | Reads a creature's rig for `animate.mjs --rig-json`. |
+| `templates/npc/ModelAnimate.server.lua` | NPC loader that plays idle, walk and run from the Humanoid's speed. |
 | `scripts/blender_job.py`, `scripts/vfx_blender.py` | Run a Blender job with the `fx.*` texture and mesh helpers. |
 | `scripts/photocraft/` | PhotoCraft MCP stdio client, sword-slash layer generator, sheet margin verifier, and review render. |
 | `scripts/texture-tool.mjs` | Checks flipbook sheets, and previews textures in Studio without uploading. |

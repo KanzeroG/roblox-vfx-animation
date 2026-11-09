@@ -1,7 +1,5 @@
 # roblox animation and vfx: full reference
 
-> **Ported skill:** tool names in this file (`build_instances`, `capture_moments`, the `animation`, `blender` and `upload_assets` tools, "it does X") come from the original toolkit. Do each step as `tools.md` maps it, with the Studio MCP and this skill's scripts.
-
 > Code examples are illustrative. Adapt them to your project and verify in Studio before production use.
 
 Visual effects are a budgeted part of gameplay, not decoration added after performance work. Build them around an owner, a trigger, a duration, and a cleanup path.

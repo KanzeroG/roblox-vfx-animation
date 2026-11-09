@@ -1,7 +1,5 @@
 # Rendered flipbooks
 
-> **Ported skill:** tool names in this file (`build_instances`, `capture_moments`, the `animation`, `blender` and `upload_assets` tools, "it does X") come from the original toolkit. Do each step as `tools.md` maps it, with the Studio MCP and this skill's scripts.
-
 Load this with `vfx-textures.md` when a flipbook should be rendered from a 3D
 scene rather than drawn: a simulation, a lit volume, shaded debris. The toolkit
 checks, previews and uploads a rendered sheet the same way as a drawn one.
@@ -18,8 +16,8 @@ renders whatever the scene shows.
 
 - **Frames:** the frames from `start` to `end` (the scene's range by default)
   are sampled evenly to fill every cell, because Roblox plays every cell. With
-  fewer frames than cells, some frames are held for two cells, and the toolkit
-  reports the repeats.
+  fewer frames than cells, some frames are held for two cells, and
+  `texture-tool.mjs check` reports the repeats.
 - **Mode:** `"alpha"` renders on a transparent film. `"additive"` renders on
   black for `LightEmission = 1`.
 - **Framing:** frame the camera so the subject stays inside the view on every

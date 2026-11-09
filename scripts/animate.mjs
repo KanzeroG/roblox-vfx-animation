@@ -3640,7 +3640,8 @@ var summary = {
   inBetweens: sequence.inBetweenCount,
   failing,
   waived,
-  checks: compactChecks(report)
+  checks: compactChecks(report),
+  ...report.groundSpeed === void 0 ? {} : { groundSpeed: report.groundSpeed }
 };
 var sheetPath = opt("--sheet");
 if (sheetPath) {

@@ -1,7 +1,5 @@
 # VFX textures
 
-> **Ported skill:** tool names in this file (`build_instances`, `capture_moments`, the `animation`, `blender` and `upload_assets` tools, "it does X") come from the original toolkit. Do each step as `tools.md` maps it, with the Studio MCP and this skill's scripts.
-
 Load this with `vfx-design.md` and `vfx-craft.md` when an effect draws its own
 textures, which most effects should: what the studied textures look like,
 drawing textures and flipbooks in a Blender job, previewing them in Studio, and

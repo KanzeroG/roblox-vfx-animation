@@ -1,68 +1,58 @@
-# Creature animation with the `animation` tool
-
-> **Ported skill:** tool names in this file (`build_instances`, `capture_moments`, the `animation`, `blender` and `upload_assets` tools, "it does X") come from the original toolkit. Do each step as `tools.md` maps it, with the Studio MCP and this skill's scripts.
+# Creature animation
 
 Use this to animate a creature or any model that is not a stock R15 or R6
-body: on its own rig, rigged by hand or by `rig`, with waves for chains that
-sway and a gait for legs that walk. The pose format, the checks and the
-publish, wire and verify flow are in `references/character-animation.md`;
-load that first.
+body: on its own rig, rigged by hand or with `scripts/rig_model.lua`, with
+waves for chains that sway and a gait for legs that walk. The pose format and
+the check, build, publish and verify steps are in
+`references/character-animation.md`; load that first.
 
 ## A model's own rig
 
-A creature or other model rigged by hand, with `Motor6D`s or
-`AnimationConstraint`s between its own parts under a `Humanoid` or an
+A creature or other model rigged with `Motor6D`s, `AnimationConstraint`s or
+skinned `Bone`s between its own parts, under a `Humanoid` or an
 `AnimationController`, is animated on its own rig: give the model's path as
-`rig`, for example `rig: "game.Workspace.Dog"`.
+the animation's `rig`, for example `"rig": "game.Workspace.Dog"`.
 
-- **Read the rig first.** `check` reads it from Studio and returns `rig`:
-  `joints`, the names a pose may key, parents first; `position`, the one joint
-  that takes a `position` (false when no one joint moves the whole body);
-  what its declarations name (`feet`, `limbs`, `hinges`, and `ranged` for the
-  joints with a declared range); `scale`; and `notes`, such as joints renamed
-  after the parts they move because several shared a name. A pose keying a
-  joint the rig lacks is refused with the rig's joints listed, so a first
-  check keying one joint you expect, such as `Neck`, tells you what to key
-  either way.
+- **Read the rig first.** Set `MODEL_PATH` in `scripts/read_rig.lua`, run it
+  with `execute_luau`, save the returned JSON verbatim to a file, and pass it
+  to `animate.mjs` with `--rig-json`. The check then knows the rig's joints,
+  parents first, the one joint that takes a `position` (the root), its
+  declarations and its scale. A pose keying a joint the rig lacks is refused
+  with the rig's joints listed, so a first check keying one joint you expect,
+  such as `Neck`, tells you what to key either way. Read the rig again after
+  changing it.
 - **Pose with rotation.** `rotation: [x, y, z]` turns a joint by degrees about
   the body's own axes at rest, right (+X), up (+Y) and back (+Z), whichever
   way the model's joint frames point. A head nods with X (+X lifts the nose),
   turns with Y; a tail wags with Y. `position` moves the whole body on the
-  joint `rig.position` names. `aim`, `aimAt` and `bend` need declarations
-  (below); without them use `rotation`.
+  root joint. `aim`, `aimAt` and `bend` need declarations (below); without
+  them use `rotation`.
 - **Checks say what they cannot judge.** A check the rig gives nothing to
   judge by is `skipped`, its detail beginning `not checked:` and saying what
   it lacks: the joint-range check for joints with no declared range, the
   ground, foot and gait checks for a body with no declared feet. A skipped
-  check never counts as passed and needs no
-  waiver. Distance limits are R15's scaled to the body's size, and a result
-  measured against them says so.
-- **Build plays it on a copy.** `build` plays the animation on a copy of the
-  model in a temporary folder, compares it with the checked motion on the
-  model's own joints, and writes it only if they match. It is refused when
-  the rig changed since the check (check again), or when a copy would not be
-  faithful: a part, joint or weld that cannot be archived, or a joint or weld
-  holding a part outside the model. The error names it; move that weld or
-  make the part archivable.
+  check never counts as passed and needs no waiver. Distance limits are R15's
+  scaled to the body's size, and a result measured against them says so.
 - **The preview is the model.** The contact sheet draws its parts as Roblox
   shapes them (blocks, wedges, cylinders, balls), welded parts with the part
-  they move with, and MeshParts with their own meshes. `sheet.boxes` names
-  any MeshPart drawn as its box instead, and why. A long body gets wider
-  frames. Pass `locomotion: true` for a gait to see it from the side.
-- `wire {model, slot, ...}` and `verify {model, animation}` work as for an NPC,
-  and `verify` compares the model's joints on its own rig.
+  they move with, and MeshParts with their own meshes. A long body gets wider
+  frames. Pass `--locomotion` for a gait to see it from the side.
+- **Build, then watch it on the model.** Send the Luau from `--out` with
+  `execute_luau`, and play the preview id on the model's own Animator in
+  Studio, as `tools.md` plays one on a dummy. A walking creature with a
+  Humanoid takes the NPC loader (`character-animation.md`, "NPCs").
 - A rig has at most 64 joints and 128 parts.
 
 ### Declarations: AnimRig
 
 The model's `AnimRig` attribute, a string of JSON, says what its joints
 cannot: which parts stand on the ground, which joints are limbs and hinges,
-and how far each may turn. Set it as a string attribute on the model, for
-example with a `build_instances` set step's `attributes`. Only version 1 is
-read, and a declaration with any error refuses the whole rig, saying what is
-wrong. `rig` writes it for you, from a body plan or from `declarations`
-(next section). A dog whose legs bend at the knee, the front knees folding back and
-the hind forward:
+and how far each may turn. `scripts/rig_model.lua` writes it from a body plan
+or from `declarations` (next section), or set it yourself with
+`model:SetAttribute("AnimRig", json)`. Only version 1 is read, and a
+declaration with any error refuses the whole rig, saying what is wrong. A dog
+whose legs bend at the knee, the front knees folding back and the hind
+forward:
 
 ```text
 {
@@ -108,23 +98,26 @@ chooses where its hinge folds, `bend: degrees` folds it, and
 `aimAt: [right, up, forward]` puts its end on a point in studs from the root
 part's centre, as on R15.
 
-## Rigging a creature: action rig
+## Rigging a creature with rig_model.lua
 
 A creature made of loose pieces, such as Parts you built or an uploaded
-model, is joined into a rig by `rig` rather than by Luau. The pieces stay
-where they are. Each joint names the piece it moves, the piece it hangs
-from, and the pivot: the point in the world, in studs, where the piece turns.
+model, is joined into a rig by `scripts/rig_model.lua`. Edit its `CONFIG` and
+run it with `execute_luau`. The pieces stay where they are. Each joint names
+the piece it moves, the piece it hangs from, and the pivot: the point in
+studs where the piece turns.
 
-```text
-{
-  "action": "rig", "model": "game.Workspace.Dog",
-  "controller": "Humanoid", "plan": "quadruped",
-  "joints": [
-    { "part": "Head", "parent": "Body", "pivot": [0, 3.1, -1.6], "name": "Neck", "with": ["EarLeft", "EarRight"] },
-    { "part": "FrontLeftUpper", "parent": "Body", "pivot": [-0.6, 2.4, -1.2], "name": "FrontLeft" },
-    { "part": "FrontLeftLower", "parent": "FrontLeftUpper", "pivot": [-0.6, 1.6, -1.2], "name": "FrontLeftKnee" },
-    { "part": "Tail", "parent": "Body", "pivot": [0, 2.9, 1.9] }
-  ]
+```lua
+local CONFIG = {
+	model = "game.Workspace.Dog",
+	controller = "Humanoid", plan = "quadruped",
+	replaceImporter = false, pivotSpace = "world",
+	joints = {
+		{ part = "Head", parent = "Body", pivot = { 0, 3.1, -1.6 }, name = "Neck", with = { "EarLeft", "EarRight" } },
+		{ part = "FrontLeftUpper", parent = "Body", pivot = { -0.6, 2.4, -1.2 }, name = "FrontLeft" },
+		{ part = "FrontLeftLower", parent = "FrontLeftUpper", pivot = { -0.6, 1.6, -1.2 }, name = "FrontLeftKnee" },
+		{ part = "Tail", parent = "Body", pivot = { 0, 2.9, 1.9 } },
+	},
+	declarations = nil,
 }
 ```
 
@@ -134,8 +127,8 @@ from, and the pivot: the point in the world, in studs, where the piece turns.
   `Lower` and optionally `Foot` after that, such as `FrontLeftUpper`. `Head`,
   `Jaw` and `Tail`, `Tail2` and so on get ranges. The plan declares the feet,
   limbs, knees (front folding back, hind forward) and ranges, so `aim`, `bend`
-  and `aimAt` work on the legs. Give `declarations` to add to or override it
-  per joint. `plan: "custom"` declares only what `declarations` gives.
+  and `aimAt` work on the legs. `declarations` adds to or overrides it per
+  section. `plan = "custom"` declares only what `declarations` gives.
 - **Put each pivot where the piece meets its parent**: a hip at the top of
   the leg, a knee between the two leg pieces, a neck at the back of the head.
   A pivot at a piece's centre makes it spin in place. A pivot outside both
@@ -143,104 +136,84 @@ from, and the pivot: the point in the world, in studs, where the piece turns.
 - **Every part needs a place.** A piece is moved by exactly one joint. A part
   that only rides along (an ear, an eye) goes in its piece's `with`, or is
   already welded to it. A part left loose, a weld holding two jointed pieces
-  together, or joints that do not form one tree refuse the call, listing
-  every problem; nothing is changed.
+  together, or joints that do not form one tree refuse the run, listing every
+  problem; nothing is changed.
 - **Controller.** `Humanoid` for a creature that walks or is moved with
   `MoveTo`: its root is left free and its hip height is set from the rest
   pose. `AnimationController` for one that flies, swims or stays put: its root
   is anchored, and a script moves it by its root's CFrame.
 - **The root.** The piece every other hangs from (`Body` above) is jointed to
-  an invisible `HumanoidRootPart` that `rig` makes, by a joint named `Root`,
-  which is the joint that takes `position`. Do not name a joint `Root`.
+  an invisible `HumanoidRootPart` that the script makes, by a joint named
+  `Root`, which is the joint that takes `position`. Do not name a joint `Root`.
 - **An uploaded or generated model** may arrive with a rig of its own: every
-  piece hung from a `RootPart` at the piece's centre. `rig` refuses with
-  `importer_rig`; pass `replace: "importer"` to take that rig out and build
-  yours. An upload may also arrive with no rig, each piece loose in a Model
-  named `<piece>_Node`; `replace: "importer"` is harmless there, so pass it
-  for any upload. See "From Blender" and "A generated body" below.
-- **Look at the range sheet.** The result carries `rangeSheet`, an image and a
-  3D preview with every joint turned 30° each way. A piece that swings away
-  from the body, or opens a gap at its joint, has its pivot in the wrong
-  place: fix the pivot and rig again.
-- **Rigging again** needs `expected_revision`, the `revision` the last `rig`
-  returned. A rig that `rig` did not build, or that was edited since, is left
-  alone (`rig_not_built_here`, `rig_edited_since_build`).
+  piece hung from a `RootPart`, or loose in Models named `<piece>_Node`. Set
+  `replaceImporter = true` to take that rig out and build yours; it is harmless
+  on a model without one, so set it for any upload.
+- **Check each pivot.** Turn each joint 30° each way and `screen_capture` it,
+  for example `motor.Transform = CFrame.Angles(math.rad(30), 0, 0)`, then set
+  `Transform` back to identity. A piece that swings away from the body, or
+  opens a gap at its joint, has its pivot in the wrong place: fix the pivot,
+  undo, and run the script again.
 - **A model already rigged**, by hand or from the Creator Store: leave
-  `joints` out. `rig {model, plan}` or `rig {model, declarations}` writes only
-  the `AnimRig` attribute and changes no joint; `rig {model}` alone reads the
-  rig and draws its range sheet.
+  `joints` empty and `controller` nil. The script writes only the `AnimRig`
+  attribute from `plan` and `declarations`, and changes no joint.
 
-Then animate it with the model's path as the animation's `rig`, as above.
+The script's result lists the joints it made, the hip height and the
+declarations. Then read the rig with `read_rig.lua` and animate it with the
+model's path as the animation's `rig`, as above.
 
 ### From Blender
 
-A creature modelled in Blender as moving pieces (each piece made with
-`fx.join` and given its pivot and parent with `fx.piece`, both in
-`scripts/vfx_blender.py`) is one upload and one `rig` call. In this edition,
-`scripts/blender_job.py` does not print the `joints` line described in step 1,
-and the `rig` action that joins pieces is not ported: list each piece's
-parent and pivot from the Blender scene, then create the Motor6Ds as
-`references/tools.md` describes. The original flow is:
+A creature modelled in Blender as moving pieces uses `fx.join` to make each
+piece and `fx.piece` to give it a pivot and parent, both in
+`scripts/vfx_blender.py`. Keep the pivots you pass to `fx.piece`: they become
+the script's joints.
 
-1. The Blender job's result ends its **moving pieces** line with `joints`:
-   each piece, the piece it hangs from, its pivot, and for a leg the joint
-   names the recipes key. Fix anything that line flags before uploading.
-2. `upload_asset` the GLB as a Model, and `insert_asset` it where the
-   creature belongs, with a `position`. It arrives as one Model: a MeshPart
-   for each piece, named after it, where it was modelled. The pieces come
-   either hung flat from a `RootPart` or loose in nested `<piece>_Node`
-   Models with no rig; the call below is the same for both, so there is no
-   need to look first.
-3. Rig it with those joints as they are, before moving a piece or changing
-   the model's pivot:
+1. Export the GLB (`blender_job.py ... --export`). Upload it with
+   `node SKILL_DIR/scripts/upload.mjs Model creature.glb` and insert it, or
+   import it with Studio's 3D Importer. It arrives as one Model: a MeshPart
+   for each piece, named after it, where it was modelled.
+2. Rig it before moving a piece or changing the model's pivot, with the
+   Blender pivots as they are: `pivotSpace = "import"` and
+   `replaceImporter = true`.
 
-```text
-{
-  "action": "rig", "model": "game.Workspace.Wolf",
-  "replace": "importer", "pivot_space": "import",
-  "controller": "Humanoid", "plan": "quadruped",
-  "joints": <the joints from the Blender job's result>
-}
-```
-
-`pivot_space: "import"` says the pivots are measured from the model's own
+`pivotSpace = "import"` says the pivots are measured from the model's own
 origin, as Blender gave them, so they are right wherever the model was
-inserted and whichever way it faces. That origin is the `RootPart`, or the
-model's pivot when it arrived without a rig. Rig it before scaling it. A
-later `rig` call on the same model, to fix a pivot, takes them the same way.
-Without it pivots are points in the world. A refusal that a pivot "lies
-outside" its pieces on every joint means the origin was not where expected:
-read `Body`'s position and give the pivots in the world instead.
+inserted and whichever way it faces. That origin is the importer's
+`RootPart`, or the model's pivot when it arrived without a rig. Rig it before
+scaling it. If every pivot is refused as lying outside its pieces, the origin
+was not where expected: read the body's position and give the pivots in the
+world instead.
 
 ### A skinned creature
 
-A creature that bends along its length is one mesh skinned to bones
-(modelled and weighted in Blender; this skill has no skinning helper). The
-upload keeps its bones and weights: it arrives as one Model holding one
-MeshPart, with the armature's bones inside it as `Bone`s. A bone is a joint
-named after itself, so there are no joints to give:
+A creature that bends along its length is one mesh skinned to bones,
+modelled and weighted in Blender. The upload keeps its bones and weights: it
+arrives as one Model holding one MeshPart, with the armature's bones inside
+it as `Bone`s. A bone is a joint named after itself, so there are no joints
+to give:
 
-```text
-{
-  "action": "rig", "model": "game.Workspace.Snake",
-  "controller": "AnimationController", "replace": "importer",
-  "plan": "custom",
-  "declarations": { "limits": { "Spine2": { "turn": 60 }, "Spine3": { "turn": 60 } } }
+```lua
+local CONFIG = {
+	model = "game.Workspace.Snake",
+	controller = "AnimationController", plan = "custom",
+	replaceImporter = true, pivotSpace = "world",
+	joints = {},
+	declarations = { limits = { Spine2 = { turn = 60 }, Spine3 = { turn = 60 } } },
 }
 ```
 
-- `rig` makes the hidden root and its `Root` joint around the mesh, the
+- The script makes the hidden root and its `Root` joint around the mesh, the
   controller, and the declarations, and takes out the `AnimationController`
   and `InitialPoses` the upload came with. It never changes a bone.
 - **Animate the bones by name**, exactly as joints: `rotation` in the body's
   axes whichever way a bone lies, `waves` down a chain of them, and on a
   four-legged body `gait`, `aim` and `aimAt` on the legs. `Root` takes
   `position` and moves the whole creature.
-- **`plan: "quadruped"`** reads the bones' names as it reads pieces':
+- **Bones in a `quadruped` plan**: name them as pieces are named.
   `FrontLeftUpper`, `FrontLeftLower` and `FrontLeftFoot` make a leg whose
-  knee is the lower bone's joint and whose foot is the foot bone, standing
-  where that bone begins. Its joints are named after the bones, so a recipe's
-  `FrontLeft` is `FrontLeftUpper` here and its `FrontLeftKnee` is
+  knee is the lower bone's joint and whose foot is the foot bone. A recipe's
+  `FrontLeft` is then `FrontLeftUpper`, and its `FrontLeftKnee` is
   `FrontLeftLower`.
 - **A limb on bones ends where the next bone begins.** Declaring a limb whose
   last bone has no bone below it needs `end`, a point in that bone's frame:
@@ -248,73 +221,45 @@ named after itself, so there are no joints to give:
 - **Declare a range for every bone you move**, under `limits`, or
   `jointLimits` reports them as not judged.
 - At most 64 joints, the root's among them.
-- The result's sheet has `skin`: "bent by its bones" means the image shows
-  the mesh as Studio will skin it. "drawn rigid" means the mesh's skin could
-  not be read, and only the checks and Studio show the motion.
-- Without a `controller`, `rig {model, plan, declarations}` only declares,
-  and leaves the mesh loose and unanchored: use the call above.
 
 ### An animation made in Blender
 
 Motion that Blender's tools make more easily than keys do (inverse
-kinematics, a constraint, a path) is animated there and baked with
-`fx.export_animation` in `scripts/vfx_blender.py`. The job's result names a
-file; the original toolkit passes it as animation_file in place of
-`animation`. In this edition, `scripts/animate.mjs` does not read that file,
-so compile and verify such motion with the original toolkit or as pose JSON:
-
-```text
-{ "action": "build", "animation_file": "<path from the job's result>", "parent": "game.ServerStorage.Animations" }
-```
-
-It is a pose description like any other, so `check`, `build`, `verify` and
-the options (`locomotion`, `grounded`, `waive`) work as usual. It carries the
-skeleton it was made on, and is refused if the model in Studio is not that
-one: animate the scene the upload was exported from.
-
-Once it is published and wired, check both in one call in a running
-playtest: the published asset is played on the model and its joints compared
-with the file, and the state is read from its loader.
-
-```text
-{ "action": "verify", "model": "<model path>", "animation_file": "<same path>", "animation_id": "rbxassetid://N", "slot": "idle" }
-```
-
-`slot` and animation_id alone check only what the loader holds, not how it
-plays.
+kinematics, a constraint, a path) can be animated there and baked with
+`fx.export_animation` in `scripts/vfx_blender.py`. `animate.mjs` does not read
+that baked file, so it is not checked or built by this skill. Prefer pose JSON
+with `waves` and `gait`, which `animate.mjs` checks, and keep Blender for
+shapes.
 
 ### A generated body
 
-Without Blender, `generate_model` can make the body: pass the pieces as
-`schema_groups` (`Body`, `Head`, `Tail`, `FrontLeft`, `FrontRight`,
-`HindLeft`, `HindRight`), and each comes back as its own MeshPart named
-`<group>_geom`, hung flat from a root as an upload is. What comes back is
-rougher than a modelled body, so check it before rigging:
+A body from a mesh generator is rougher than a modelled one, so check it
+before rigging:
 
-- **Facing.** A generated body has come back facing +Z, backward. Turn the
+- **Facing.** Generated bodies often come back facing +Z, backward. Turn the
   model half a turn about Y if its head is toward +Z of its pivot.
-- **Size.** It has come back well under the size asked for. Scale the model
-  (`ScaleTo`) to the size it should be, then read each part's position and
-  size back.
+- **Size.** Scale the model (`ScaleTo`) to the size it should be, then read
+  each part's position and size back.
 - **Pivots come from the pieces' boxes**, in the world: a leg's hip at the
   top centre of its box, the neck where the head's box meets the body's, the
-  tail's root at the end of its box nearest the body. A generated leg is one
-  piece, so it has no knee: its gait swings from the hip, and
+  tail's root at the end of its box nearest the body. A generated leg is
+  usually one piece, so it has no knee: its gait swings from the hip, and
   `footSliding` may need waiving.
-- **Names.** The `quadruped` plan reads part names, so rename `FrontLeft_geom`
-  to `FrontLeft` and so on before rigging, or give `declarations` yourself.
-- **Read the range sheet** before animating: a piece the generator split
-  badly, such as one leg half the height of the others, shows there. Generate
-  again rather than animate a body like that.
+- **Names.** The `quadruped` plan reads part names, so rename pieces such as
+  `FrontLeft_geom` to `FrontLeft` before rigging, or give `declarations`
+  yourself.
+- **Check the pivots** as above before animating. A piece the generator split
+  badly, such as one leg half the height of the others, shows there.
+  Generate again rather than animate a body like that.
 
-Rig it with `replace: "importer"` and pivots in the world (no `pivot_space`).
+Rig it with `replaceImporter = true` and pivots in the world.
 
 ## Waves: tails, tentacles, wings, spines
 
 A chain that sways is written as a wave, not as keys. The animation's
 `waves` send a sine down a list of joints, each joint trailing the one before
 it, and `duration` gives the length in seconds. With waves, `keyframes` may
-be left out; the tool writes twelve keys a cycle.
+be left out; `animate.mjs` writes twelve keys a cycle.
 
 ```text
 {
@@ -384,7 +329,7 @@ A walk, trot or run is written as a `gait`, not as keys. One cycle fills
 `duration`. Each leg's foot is placed every 1/30 s: while it is down it
 travels straight back along the ground, and while it is up it swings forward
 along an arc. The body rides just low enough for the legs to reach the
-stride. Pass `locomotion: true` with it.
+stride. Pass `--locomotion` with it.
 
 ```text
 { "name": "Walk", "rig": "game.Workspace.Dog", "loop": true, "priority": "Movement", "duration": 1,
@@ -426,14 +371,15 @@ stride. Pass `locomotion: true` with it.
   by hand or driven by a wave. Everything else can: a head in `keyframes`, a
   tail in `waves`.
 - The speed is `stride / (duty * duration)` studs a second. The check
-  reports it as `groundSpeed`; pass that to `wire` as `ground_speed`, and
+  reports it as `groundSpeed`; set it as the NPC loader's `AnimWalkSpeed` or
+  `AnimRunSpeed` attribute, and
   keep it near how fast the creature moves (a Humanoid's `WalkSpeed`).
 - On a body with no pair of hips, the `gaitSymmetry` check looks at the feet:
   every foot must step each cycle and share the ground evenly, and it reports
   the order the feet land in.
 
 Recipes for a dog rigged with the `quadruped` plan (joints `FrontLeft`,
-`FrontLeftKnee` and so on, `Neck`, `Tail`). Idle, with `grounded: true`:
+`FrontLeftKnee` and so on, `Neck`, `Tail`). Idle, with `--grounded`:
 
 ```json creature
 {
@@ -445,7 +391,7 @@ Recipes for a dog rigged with the `quadruped` plan (joints `FrontLeft`,
 }
 ```
 
-Walk, trot and run, each with `locomotion: true`:
+Walk, trot and run, each with `--locomotion`:
 
 ```json creature
 {

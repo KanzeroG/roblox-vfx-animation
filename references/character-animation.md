@@ -1,23 +1,26 @@
-# Character animation with `animate.mjs` (the original `animation` tool)
+# Character animation
 
-> **Ported skill:** tool names in this file (`build_instances`, `capture_moments`, the `animation`, `blender` and `upload_assets` tools, "it does X") come from the original toolkit. Do each step as `tools.md` maps it, with the Studio MCP and this skill's scripts.
+Use this to author an R15 or R6 animation, to animate an NPC (see [NPCs](#npcs)),
+and to animate a creature or other model on its own rig (see
+[Creatures and other models](#creatures-and-other-models)). The steps:
 
-Here the `animation` tool's `check` is `node SKILL_DIR/scripts/animate.mjs
-<file.json> --sheet <file.png>` (with `--locomotion` or `--grounded`), and its
-`build` is the Luau that `--out` writes, sent with `execute_luau`. `publish`,
-`wire` and `verify` are done by hand (`tools.md`, "Animations").
+- **check**: `node SKILL_DIR/scripts/animate.mjs <file.json> --sheet <file.png>`
+  validates the format, runs the motion checks and draws a contact sheet,
+  without touching Studio. Add `--locomotion` for a walk or run, and
+  `--grounded` for anything else done standing on the ground, such as an
+  attack or an idle: it fails when a foot sinks into the floor, which a crouch
+  or lunge easily does. For a model's own rig, add `--rig-json` with the
+  reading from `scripts/read_rig.lua`.
+- **build**: add `--out <file.lua>` and send that Luau with `execute_luau`. It
+  makes the KeyframeSequence under `ServerStorage.Animations` and a temporary
+  preview id (`tools.md`, "Animations").
+- **publish**: right-click the KeyframeSequence > Save to Roblox, or Save to
+  File and `node SKILL_DIR/scripts/upload.mjs Animation file.rbxm`.
+- **verify**: play it in Studio (`start_stop_play`), `screen_capture` a few
+  moments, and read `get_console_output`.
 
-Use this to author an R15 animation with the `animation` tool (check, build,
-publish, wire, verify), to animate an NPC (see [NPCs](#npcs)), and to animate
-a creature or other model on its own rig (see
-[Creatures and other models](#creatures-and-other-models)).
-Start from the recipe closest to the request and change
-it. Run `check` before `build`: it validates the format, runs the motion checks
-and returns a contact sheet, without touching Studio (for a model's own rig it
-reads the rig from Studio, and changes nothing). Pass `locomotion: true`
-for a walk or run, and `grounded: true` for anything else done standing on
-the ground, such as an attack or an idle: it fails when a foot sinks into the
-floor, which a crouch or lunge easily does.
+Start from the recipe closest to the request and change it. Run check before
+build.
 
 ## Format
 
@@ -99,7 +102,7 @@ ground, a hand on a hilt or on the sheath.
   way the body does.
 - On R6, whose limbs cannot bend, the block points through the point: its end
   lands on it only when the point is exactly a limb's length away, and passes
-  beyond it when nearer. Check R6 feet with `grounded: true`.
+  beyond it when nearer. Check R6 feet with `--grounded`.
 - `bendToward` turns the elbow or knee, as with `aim`.
 - A point out of reach is refused, saying how far the limb reaches.
 - **Planting.** A limb aimed at the same point in one of its keys and the next
@@ -124,7 +127,7 @@ ground, a hand on a hilt or on the sheath.
 ## Recipes
 
 Every recipe below compiles and passes every motion check. A unit test holds
-each of them to that. Pass `locomotion: true` for walk and run, which turns on
+each of them to that. Pass `--locomotion` for walk and run, which turns on
 the ground-contact, foot-sliding and gait-symmetry checks.
 
 ### Wave (loop)
@@ -153,7 +156,7 @@ swings between 70° and 115°. For a bigger wave, widen that range.
 This is a slow breath. Keep idle motion small and slow: a few degrees over
 seconds.
 
-### Walk (loop, `locomotion: true`)
+### Walk (loop, `--locomotion`)
 
 ```json
 { "name": "Walk", "rig": "R15", "loop": true, "easing": { "style": "Linear" }, "keyframes": [
@@ -175,7 +178,7 @@ it.
 - For a longer stride, raise the hips' forward and back aims together. Then
   lower `Root` a little more at contact, or the feet sink into the ground.
 
-### Run (loop, `locomotion: true`)
+### Run (loop, `--locomotion`)
 
 ```json
 { "name": "Run", "rig": "R15", "loop": true, "easing": { "style": "Linear" }, "keyframes": [
@@ -312,7 +315,7 @@ sheath.Parent = character
   sheath's mouth with `aimAt`; the left hand can hold the sheath the same
   way.
 
-### Lunge (one shot, with a weapon, `grounded: true`)
+### Lunge (one shot, with a weapon, `--grounded`)
 
 ```json
 { "name": "Lunge", "rig": "R15", "priority": "Action", "keyframes": [
@@ -364,10 +367,9 @@ Many places, combat games especially, give players R6 characters: six blocks
 with no elbows, wrists, knees, ankles or waist. An R15 animation does not play
 on them, so find which rig the players use before animating:
 
-- In a running playtest, read the character's `Humanoid.RigType` (for example
-  with `eval_client_runtime`). A `StarterCharacter` in `StarterPlayer` decides
-  it too. If a place lets players choose, make one animation for each rig.
-- `verify` refuses when the playtest character's rig is not the animation's.
+- Look for a `StarterCharacter` in `StarterPlayer` and at the game settings'
+  avatar type, or read the character's `Humanoid.RigType` in a running
+  playtest. If a place lets players choose, make one animation for each rig.
 
 Set `rig: "R6"`. Its joints are `Root`, `Neck`, `LeftShoulder`,
 `RightShoulder`, `LeftHip`, `RightHip` and `Weapon`, and they take poses in the
@@ -376,7 +378,7 @@ same terms as on R15: `aim` points an arm or leg the same way, and a
 leg swings as one rigid block. The contact sheet draws the R6 blocks. Foot
 sliding is reported as not checked for R6: its limit was set on R15 feet.
 
-### Walk (R6, loop, `locomotion: true`)
+### Walk (R6, loop, `--locomotion`)
 
 ```json
 { "name": "WalkR6", "rig": "R6", "loop": true, "easing": { "style": "CubicV2", "direction": "InOut" }, "keyframes": [
@@ -409,28 +411,38 @@ the head.
 
 An NPC is a Model the game moves, not a player's character. Roblox's `Animate`
 script is a LocalScript that runs only under a player, so on an NPC it plays
-nothing. The `animation` tool puts a loader in the model instead:
-`ModelAnimate`, a server Script whose code never changes. It plays the
-model's idle while it stands and its walk or run while it moves, reading the
-Humanoid's `Running` speed. It cross-fades over 0.2 s, and what it plays
-reaches every client. Every copy of the model carries its loader, so a
-spawner that clones the NPC needs nothing else.
+nothing. Give the model a loader instead: `templates/npc/ModelAnimate.server.lua`,
+a server Script that plays the model's idle while it stands and its walk or
+run while it moves, reading the Humanoid's `Running` speed. It cross-fades over
+0.2 s, and what it plays reaches every client. Every copy of the model carries
+its loader, so a spawner that clones the NPC needs nothing else.
 
-1. **Make the body.** `rig {model: "game.Workspace.Guard", stock: "R15",
-   position: [x, y, z]}` makes Roblox's stock R15 or R6 body with its feet at
-   the position, as one undo step. Its loader already holds Roblox's default
-   idle, walk and run, listed in the result's `states`, so it animates as soon
-   as the game moves it. Make it where the game keeps it, for example
-   `game.ServerStorage.Guard` for a spawner to clone.
-2. **Give it its own animations.** Adapt the Idle and Walk recipes above (the
-   Run recipe for a run). Check a gait with `locomotion: true` and keep the
+1. **Make the body.** In Studio, Avatar > Rig Builder makes a stock R15 or R6
+   body. With `execute_luau`:
+
+   ```lua
+   local npc = game:GetService("Players"):CreateHumanoidModelFromDescription(
+   	Instance.new("HumanoidDescription"), Enum.HumanoidRigType.R15)
+   npc.Name = "Guard"
+   npc:PivotTo(CFrame.new(0, 3, 0))
+   npc.Parent = workspace
+   ```
+
+   Put it where the game keeps it, for example `game.ServerStorage.Guard` for
+   a spawner to clone.
+2. **Add the loader.** Create a Script named `ModelAnimate` inside the model
+   and set its `Source` to the template's text, as `tools.md` installs the VFX
+   modules. With no attributes set it plays Roblox's default idle, walk and
+   run for the rig, so the NPC animates as soon as the game moves it.
+3. **Give it its own animations.** Adapt the Idle and Walk recipes above (the
+   Run recipe for a run). Check a gait with `--locomotion` and keep the
    `groundSpeed` the check returns: how fast its planted feet travel backward,
    in studs a second. It is 2.21 for the Walk recipe and 4.08 for the Run.
-   Build and publish each, then
-   `wire {model, slot: "walk", animation_id, ground_speed, expected_id}`,
-   where `expected_id` is the default the state holds now, from `rig`'s
-   `states`. Wire the idle the same way, without `ground_speed`.
-3. **Match its speed to its walk.** The loader plays a gait at the model's
+   Build and publish each, then wire it by setting attributes on the model:
+   `AnimIdle`, `AnimWalk` and `AnimRun` to `"rbxassetid://<id>"`, and
+   `AnimWalkSpeed` and `AnimRunSpeed` to each gait's ground speed. The loader
+   picks up a change at once.
+4. **Match its speed to its walk.** The loader plays a gait at the model's
    speed divided by the gait's ground speed, from half to twice as fast, so
    the feet keep pace. Beyond that range they slide. A Humanoid's WalkSpeed
    defaults to 16, which is far beyond the Walk recipe's range of 1.1 to 4.4.
@@ -439,12 +451,11 @@ spawner that clones the NPC needs nothing else.
    halving every keyframe time doubles the ground speed, and a longer stride
    raises it too. Quickened steps alone soon look frantic, so lengthen the
    stride as well, and look at the contact sheet. With a walk and a run
-   both wired with their ground speeds, the loader plays the run above the
-   speed halfway between them, and the walk below it.
-4. **Move it** from a server Script with `Humanoid:MoveTo` or a path; the
-   `roblox-npc-ai` skill has patrols, chases and spawners. Do not play the
-   idle or walk from that script, since the loader already plays them.
-5. **Play a one-shot**, such as an attack or a wave, from the game's script on
+   both timed, the loader plays the run above the speed halfway between
+   their ground speeds, and the walk below it.
+5. **Move it** from a server Script with `Humanoid:MoveTo` or a path. Do not
+   play the idle or walk from that script, since the loader already plays them.
+6. **Play a one-shot**, such as an attack or a wave, from the game's script on
    the model's Animator, at `Action` priority so it plays over the walk:
 
    ```lua
@@ -457,28 +468,23 @@ spawner that clones the NPC needs nothing else.
    attack:Play()
    ```
 
-6. **Verify it in a playtest.** Start one with
-   `solo_playtest {action: "start", mode: "play"}`. When the game's own script
-   moves the NPC, as a patrol does, `verify {model: "game.Workspace.Guard"}`
-   watches it on the server until it has seen it walk and stand for two
-   seconds each, or for twenty seconds at most, so a patrol needs a pause at
-   each end. For an NPC nothing moves yet,
-   `verify {model, position: [x, y, z]}` walks its Humanoid there and watches
-   it stand; do not use `position` while a script moves it, since the two
-   fight over its Humanoid. Either way it passes when the walk played for most
-   of the time the NPC moved, the idle for most of the time it stood, and the
-   walk at the pace its speed needs. A failure says what to change, such as
-   the WalkSpeed to set. With `animation` it plays that animation on the NPC,
-   and compares its joints as `verify` does on a character.
+7. **Verify it in a playtest** (`start_stop_play`). Let the game's script move
+   the NPC, or call `Humanoid:MoveTo` on it, and `screen_capture` it walking
+   and standing. The walk should play while it moves, the idle while it
+   stands, and the feet should not slide; if they do, adjust WalkSpeed or the
+   ground speed attributes as in step 4. Read `get_console_output` for
+   animation load errors: an animation the place's owner does not own will
+   not play.
 
-R6 reports no ground speed, since its feet are not checked for sliding, so the
-loader plays an R6 gait at its own pace.
+R6 reports no ground speed, since its feet are not checked for sliding, so
+leave its speed attributes unset and the loader plays an R6 gait at its own
+pace.
 
 ## Creatures and other models
 
 A creature or any model that is not a stock body is animated on its own rig:
 give the model's path as `rig`. Load `references/creature-animation.md` for
-reading a model's rig, rigging loose pieces with `rig`, `waves` for tails,
+reading a model's rig, rigging loose pieces with `scripts/rig_model.lua`, `waves` for tails,
 tentacles, wings and spines, `gait` for walking any number of legs (it works
 on R15 and R6 too), and tested creature recipes.
 
@@ -496,11 +502,10 @@ The recipe, for `Motor6D` and `AnimationConstraint` joints, is in
   `sheet.shows` names them. Name the keys that matter (`WindUp`, `Hit`) so a
   fast strike is always drawn. The top row is the front
   three-quarter. The bottom row looks straight at the front, where arm and head
-  motion reads; for a gait (`locomotion: true`) it looks from the side, where
+  motion reads; for a gait (`--locomotion`) it looks from the side, where
   strides and foot plants read.
 - Check the pose against the request, not only the checks. The checks catch
   broken motion, but a pose can pass them and still not be the gesture that was
   asked for.
-- Build the same `name` again to revise an animation. The toolkit shows the versions
-  in one card, and `build` replaces the sequence when you pass the revision the
-  earlier build returned.
+- Build the same `name` again to revise an animation: the Luau replaces the
+  KeyframeSequence of that name, and gets a new preview id.

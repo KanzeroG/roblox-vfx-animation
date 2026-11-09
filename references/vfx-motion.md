@@ -1,6 +1,7 @@
 # VFX motion and held forms
 
-> **Ported skill:** tool names in this file (`build_instances`, `capture_moments`, the `animation`, `blender` and `upload_assets` tools, "it does X") come from the original toolkit. Do each step as `tools.md` maps it, with the Studio MCP and this skill's scripts.
+> JSON steps in this file (`{"op": "create", ...}`) run through `Build.run` from
+> `templates/vfx/build.lua`. `tools.md` covers installing it, capturing moments and uploading.
 
 Load this with `vfx-design.md` and `vfx-craft.md` for anything that travels,
 sweeps or is held: projectiles, volleys, trails, beams, slashes, dashes,
@@ -102,10 +103,10 @@ the eye follows the blade around the arc.
   - **Launch beams** *(measured)*: a beam whose width starts at 40-200 and
     tweens to 0 over 0.15-0.4 s, with a transparency band that is clear at
     both ends (`0:1, 0.5:0, 1:1`), reads as a streak passing through.
-- **Linking:** `build_instances` cannot set a Beam's or Trail's
-  `Attachment0`/`Attachment1`. Build everything, then link them in one
-  `execute_luau` (`trail.Attachment0, trail.Attachment1 = inner, outer`) and
-  read the result back.
+- **Linking:** set a Beam's or Trail's `Attachment0`/`Attachment1` with a
+  `link` step in the same build batch (`{"op": "link", "target": "$trail",
+  "attachment0": "$a", "attachment1": "$b"}`), or in one `execute_luau`
+  afterwards, and read the result back.
 - **Trails** draw a ribbon behind two attachments as they move.
   - For a weapon slash, put the attachments at the base and tip of the blade
     and keep the trail disabled. Enable it only for the swing
