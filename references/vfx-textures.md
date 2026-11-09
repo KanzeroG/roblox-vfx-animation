@@ -117,6 +117,8 @@ Draw them with `fx.draw_flipbook` (below).
 ## Generated textures from a mockup
 
 Use this path in Claude Code or Codex when a custom sprite needs image generation.
+When PhotoCraft is available, [vfx-photocraft.md](vfx-photocraft.md) covers drawing
+the layers procedurally there and cleaning generated layers into flipbook sheets.
 
 1. Make and inspect a visual mockup image of the effect before generating final textures. Show the intended camera scale, main silhouette, dark and light layers, and the direction of movement. Mark which shapes need textures, such as a torn wind crescent, a thin lightning fork, or a dark dust wisp. The mockup is a composition reference.
 2. Use an available Codex CLI image-generation workflow for the production PNGs. If the optional `gpt-image` skill is installed, follow its wrapper. If CLI image generation is unavailable, use the procedural or Blender workflow below. Use the mockup as the visual target for each layer and describe the relevant shape, edge, padding, orientation, and alpha in the prompt. Generate one isolated shape per sprite. Ask for a transparent background, with white or neutral grayscale where Roblox will tint the layer. Exclude text, scenery, and baked lighting that belongs to the full effect. For a Beam or Trail strip, align the long axis vertically and specify whether the strip must tile lengthwise.

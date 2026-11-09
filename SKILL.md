@@ -27,6 +27,7 @@ This folder (where this file is) is `SKILL_DIR` in `tools.md`.
 | `references/vfx-design.md` | What the effect is for, palette, value, brightness, layers, timing. |
 | `references/vfx-craft.md` | Where effects live, the emit module, layer skeletons, budgets, how to check an effect. |
 | `references/vfx-textures.md` | Drawing the effect's own textures and flipbooks (Blender + numpy). |
+| `references/vfx-photocraft.md` | Flipbook layers drawn in headless PhotoCraft from polygon points, or generated with Codex and fixed there. |
 | `references/vfx-motion.md` | Projectiles, volleys, trails, beams, slashes, dashes, orbs, auras. |
 | `references/vfx-mesh-shapes.md` | Crescent and ring meshes, swirls, domes, ground waves, made in Blender. |
 | `references/vfx-camera-world.md` | Camera shake, FOV, impact frames, lights, craters, cast poses. |
@@ -43,6 +44,7 @@ This folder (where this file is) is `SKILL_DIR` in `tools.md`.
 | `scripts/blender_job.py`, `scripts/vfx_blender.py` | Runs a Blender job with the `fx.*` texture and mesh helpers. |
 | `scripts/texture-tool.mjs` | Checks flipbook sheets; previews textures in Studio without uploading. |
 | `scripts/upload.mjs` | Open Cloud uploads (textures, meshes, animations). |
+| `scripts/photocraft/` | PhotoCraft MCP stdio client, the sword-slash layer generator, a sheet margin verifier and a zoomed review render (Node 18+). |
 | `scripts/inspect-pack.luau` | Searches the VFX Pack and extracts one model from it with Lune (pinned in `aftman.toml`). |
 | `assets/VFX-Pack-KanzeroGaming.rbxm` | The bundled VFX Pack: emitters, meshes, beams, and trails to select layers from. |
 
@@ -54,6 +56,13 @@ This folder (where this file is) is `SKILL_DIR` in `tools.md`.
   - [VFX textures](references/vfx-textures.md) to draw or generate custom
     sprites. For generated textures, make a visual mockup first and follow
     the Codex CLI path documented there;
+  - [PhotoCraft layers](references/vfx-photocraft.md) whenever a PhotoCraft MCP
+    (`mcp__photocraft__*`) or `photocraft-cli` is available and the effect needs
+    its own sprites or flipbook. Split the effect into white layers (core, body,
+    rim, glow), draw drawn matter procedurally from polygon points, or generate a
+    layer with Codex and clean it there when the look matters more than exact
+    geometry. Run its margin check, review render and the sheet checker before
+    delivering;
   - `vfx-motion.md` for anything that travels, sweeps or is held;
   - `vfx-mesh-shapes.md` for crescent, ring, swirl and dome meshes;
   - `vfx-camera-world.md` for camera, screen and ground reactions, and a cast
