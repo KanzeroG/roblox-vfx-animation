@@ -1,6 +1,7 @@
 # VFX craft
 
-> **Ported skill:** tool names in this file (`build_instances`, `capture_moments`, the `animation`, `blender` and `upload_assets` tools, "it does X") come from the original toolkit. Do each step as `tools.md` maps it, with the Studio MCP and this skill's scripts.
+> JSON steps in this file (`{"op": "create", ...}`) run through `Build.run` from
+> `templates/vfx/build.lua`. `tools.md` covers installing it, capturing moments and uploading.
 
 Load this before building any visual effect: a hit, a slash, an explosion, a
 spell, an aura or a pickup. It covers:
@@ -103,7 +104,7 @@ effect.
     remote itself.
   - Never let damage or rewards wait on an effect.
 - **Timing to an animation.** Put a marker on the keyframe where the hit lands
-  (`markers: [{ "name": "Impact" }]` with the `animation` tool). Play the
+  (`markers: [{ "name": "Impact" }]` in the pose JSON). Play the
   effect from `GetMarkerReachedSignal("Impact")`; see `references/full.md` §2.
 - **A cast pose from code** (the caster's arm or hand raised toward a target
   while the effect plays, with no animation asset) is in

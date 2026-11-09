@@ -1,6 +1,7 @@
 # VFX mesh shapes
 
-> **Ported skill:** tool names in this file (`build_instances`, `capture_moments`, the `animation`, `blender` and `upload_assets` tools, "it does X") come from the original toolkit. Do each step as `tools.md` maps it, with the Studio MCP and this skill's scripts.
+> JSON steps in this file (`{"op": "create", ...}`) run through `Build.run` from
+> `templates/vfx/build.lua`. `tools.md` covers installing it, capturing moments and uploading.
 
 Load this with `vfx-design.md` and `vfx-craft.md` for mesh effects, shapes that
 grow, spin and fade (a crescent slash, a shockwave ring, a swirl, a dome, a
@@ -31,9 +32,9 @@ failing instead of escalating.
       wind swirls, or 0 for a coloured one.
     - Black `Neon` swirls as dark accents.
     - A `SpecialMesh` (FileMesh) on an invisible part, with a Decal whose
-      `Color3` is above 1 so it blooms, fading the Decal. `build_instances`
-      takes colour components from 0 to 1 only, so build the Decal there and
-      set `Color3.new(4, 6, 8)` and the like with `execute_luau` afterwards.
+      `Color3` is above 1 so it blooms, fading the Decal. Build steps pass the
+      components to `Color3.new` unclamped, so `[4, 6, 8]` works there, as does
+      setting `Color3.new(4, 6, 8)` with `execute_luau`.
   - Use `Material = "Neon"` for a glowing shape, or `"ForceField"` with a
     texture for a shimmering, edge-lit shell. ForceField's animation speed
     cannot be controlled, so it suits a shield or aura, not a timed wipe.
@@ -166,7 +167,7 @@ bpy.ops.export_scene.gltf(filepath=os.path.join(OUTPUT_DIR, "torn-wave.glb"), ex
 ```
 
 Put several shapes in one job and export one GLB. Each arrives as its own
-MeshPart named after it. `scene.json` lists their size, UVs and triangles. Upload each `.glb` as a Model and `insert_asset` it (`tools.md`).
+MeshPart named after it. `scene.json` lists their size, UVs and triangles. Upload each `.glb` with `upload.mjs Model` and insert it, or import it with Studio's 3D Importer (`tools.md`, "Uploading").
 
 In Studio:
 1. Set `Material` (`Neon` to glow, `ForceField` to shimmer), `Color`,

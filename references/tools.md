@@ -1,38 +1,20 @@
-# Tools: doing the original steps with a stock Roblox Studio MCP
+# Tools and setup
 
-The other references in this skill were written for the original toolkit, which has its own
-Studio bridge. Everything they ask for can be done with the tools you have:
+How to do each step of the skill with what you have:
 
-- the **Roblox Studio MCP** (`execute_luau`, `screen_capture`, `insert_asset`,
-  `get_console_output`, `start_stop_play`, `upload_image` and the rest);
-- a **shell** (Claude Code's Bash) to run this skill's Node and Python scripts;
-- **Blender**, either on the command line or through a Blender MCP, for
-  textures and mesh shapes.
+- the **Roblox Studio MCP**: `execute_luau` to build and run code, `screen_capture`
+  to look at the viewport, `get_console_output` for errors and prints,
+  `start_stop_play` for playtests, `insert_asset` and `upload_image`;
+- a **shell** to run this skill's Node and Python scripts;
+- **Blender** on the command line or through a Blender MCP, for textures and
+  mesh shapes, and **PhotoCraft** for flipbook layers (`vfx-photocraft.md`).
 
 `SKILL_DIR` below means this skill's folder (where `SKILL.md` is). Use its
 absolute path in commands.
 
-## Translation table
-
-| The references say | Do this instead |
-| --- | --- |
-| `build_instances` steps (`{"op": "create", ...}`) | `execute_luau` with `require(game.ReplicatedStorage.VFX.Build).run(rootPath, [==[ <steps JSON> ]==])` (install below). The same JSON works. Use `"$id"` refs or full paths for `parent`. |
-| "The toolkit writes the emit module", `set_script_source {template: ...emit.lua}` | Install once per place (below). |
-| `capture_moments {view, code, times}` | The VFXCapture flow (below): one `execute_luau` to aim and start, then per moment `execute_luau` `Capture.step(t)` followed by `screen_capture`. |
-| `selection` `action: "view"` (`path`, `from`, `angleY`) | `Capture.aim(instance, from, angleY, yaw)` |
-| the `animation` tool (`check`, `build`) | `node SKILL_DIR/scripts/animate.mjs` (below), then `execute_luau` with the Luau it writes. |
-| the `animation` tool's `rig` action (reading a creature) | `SKILL_DIR/scripts/read_rig.lua` through `execute_luau`, saved to JSON, passed as `--rig-json`. |
-| the `animation` tool's `publish` | Studio: right-click the KeyframeSequence > Save to Roblox, or Save to File then `node SKILL_DIR/scripts/upload.mjs Animation file.rbxm` |
-| the `animation` tool's `verify` | Play it in a playtest (`start_stop_play`) and `screen_capture` at a few moments; read `get_console_output`. |
-| the `blender` tool (a job with `fx.*` helpers) | `blender -b --factory-startup --python SKILL_DIR/scripts/blender_job.py -- job.py OUT_DIR [--export]`, or a Blender MCP with the loader below. |
-| what "the toolkit checks" in a flipbook sheet | `node SKILL_DIR/scripts/texture-tool.mjs check OUT_DIR` |
-| `preview_in_studio: true` (`rbxasset://textures/vfx-preview/...`) | `node SKILL_DIR/scripts/texture-tool.mjs preview OUT_DIR` (Windows Studio installs). |
-| `upload_asset` / `upload_assets` (Decal) | The MCP's `upload_image` if it gives you an asset id you can use, else `node SKILL_DIR/scripts/upload.mjs Decal file.png` |
-| `upload_asset` (Model, a Blender mesh) | `node SKILL_DIR/scripts/upload.mjs Model shape.glb`, then `insert_asset` with the id. Without an API key: ask the user to import the .glb with Studio's 3D Importer. |
-| `get_runtime_logs` | `get_console_output` |
-| `eval_client_runtime` (code on the playtest client) | `execute_luau` if your MCP can target the client during a playtest; otherwise a temporary LocalScript in `StarterPlayerScripts`, removed afterwards. |
-| `reference_clip` | Not available. Ask the user for still frames or a contact sheet of their reference, and read them as images. |
-| "The toolkit reports / shows you" | Look yourself: read the PNGs and `screen_capture` results as images. |
+When the user matches a reference video, ask for still frames or a contact
+sheet and read them as images: no tool here reads a clip. When a step says to
+look, read the PNGs and `screen_capture` results as images yourself.
 
 ## Workspace preview in Studio Edit mode
 
@@ -164,12 +146,12 @@ node SKILL_DIR/scripts/animate.mjs Slash.json --grounded --sheet Slash.png --out
 **Creatures and custom rigs:** set `MODEL_PATH` in `scripts/read_rig.lua`,
 run it with `execute_luau`, save the returned JSON verbatim to a file, and
 pass it with `--rig-json`. The model needs its Motor6Ds (or
-AnimationConstraints) and an AnimationController or Humanoid. the original `rig`
-action that *joins loose parts into a rig* is not ported: create the Motor6Ds
-yourself with `execute_luau` (Part0 the body part, Part1 the moving part, C0
-and C1 at the pivot), then read the rig. Its `AnimRig` attribute
-declarations (limits, feet, knees) are read if present; see
-`creature-animation.md`.
+AnimationConstraints) and an AnimationController or Humanoid. To join loose
+parts into a rig, edit `CONFIG` in `scripts/rig_model.lua` and run it with
+`execute_luau` first: it makes the Motor6Ds, the root and the controller, and
+writes the `AnimRig` declarations (`creature-animation.md`). An NPC that walks
+takes the loader in `templates/npc/ModelAnimate.server.lua`
+(`character-animation.md`, "NPCs").
 
 **Previewing on a dummy in Studio:**
 

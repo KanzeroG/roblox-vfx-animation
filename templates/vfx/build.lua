@@ -1,6 +1,6 @@
 --!strict
 -- VFXBuild: builds instances from JSON steps, the format every example in this
--- skill's references uses. Ported from the original build_instances
+-- skill's references uses. Ported from the original toolkit's instance builder
 -- for any Studio MCP with execute_luau.
 --
 -- Install as a ModuleScript at ReplicatedStorage.VFX.Build. Then, in one execute_luau:

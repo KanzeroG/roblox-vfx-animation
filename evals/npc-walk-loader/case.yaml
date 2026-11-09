@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: npc-walk-loader
+expected_outcome: |
+  The answer gives a server-side loader that plays idle and the published walk on the NPC from its speed, wired to the walk id, and addresses that WalkSpeed 8 is far above the walk's ground-speed range (feet will slide) with a concrete fix.

@@ -125,20 +125,34 @@ this when it is installed. Describe each layer in the prompt: white on
 transparent, its role (core, body, rim, or glow), the shape and edge, its
 orientation, and the empty padding.
 
-Then open each result with `doc_open`, from the read root, and fix it in
-PhotoCraft before it becomes a sheet:
+Generate each frame or layer as its own PNG into the PhotoCraft read root.
+The `gpt-image` call takes 1 to 6 minutes, so run it in the background. Then
+assemble and clean it in PhotoCraft. This recipe was run end to end on an
+impact star:
 
-- **Force white.** Apply `layer.layerStyle.colorOverlay {color: "#ffffff"}`,
-  then flatten on export. Keep the alpha as the shape.
-- **Crisp drawn matter.** Generated edges are often soft or haloed. Threshold
-  the alpha, or redraw the silhouette as a path over the image and keep that.
-- **Assemble the grid.** Use `doc_place` (`scale`, `fit`, `center`) to put each
-  frame inside its 256 px cell with the margin.
-- **Glow.** Duplicate the core and body, blur them, and set the opacity, as in
-  the procedural path.
+1. **Check the PNG first.** Read it as an image and check its alpha. In the
+   test, the generator returned a real transparent background with a
+   near-white shape, but at 1254 × 1254 rather than the 1024 asked for, and
+   with a faint grey line along the edges.
+2. **Place one frame per cell.** Run `doc_new` for a 1024 × 1024 transparent
+   document, then `doc_place {path, scale, center}` once per frame. Set
+   `center` to the cell's centre, `[col × 256 + 128, row × 256 + 128]`, and
+   `scale` to a percentage of the source. Size the largest frame so its
+   bounds stay at least 30 px inside the cell. `doc_place` returns the bounds
+   to check.
+3. **Merge and force white.** Run `layer.mergeVisible`, then
+   `layer.layerStyle.colorOverlay {color: "#ffffff"}`. The export flattens the
+   style, so the grey edge comes out pure white and the alpha keeps the shape.
+4. **Glow.** Duplicate the layers into a second document, blur them, and set
+   the opacity, as in the procedural path.
+5. **Check it** with `sheet-verify.mjs` (margin and white) and
+   `texture-tool.mjs check`, and look at the dark preview.
 
-This path has not been run end to end yet. Check each command's parameters with
-`command_list` before relying on it, and expect to correct the frames by hand.
+Scaling one generated sprite across the cells only grows and shrinks it.
+Roblox already does that with `Size` over a particle's life. A flipbook is
+worth its cells when the shape changes. Generate one frame per stage
+(forming, peak, breaking apart), or use the generated shape for the peak and
+draw the break-apart procedurally.
 
 Choose by case. Procedural shapes give exact tapers, coherent frames, and
 guaranteed margins. Generated shapes give texture and style but need cleanup.
