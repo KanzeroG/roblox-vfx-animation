@@ -174,9 +174,13 @@ Then animate it with the model's path as the animation's `rig`, as above.
 
 ### From Blender
 
-A creature modelled in Blender as moving pieces (the building skill's
-`references/blender.md`, "A creature of moving pieces") is one upload and one
-`rig` call:
+A creature modelled in Blender as moving pieces (each piece made with
+`fx.join` and given its pivot and parent with `fx.piece`, both in
+`scripts/vfx_blender.py`) is one upload and one `rig` call. In this edition,
+`scripts/blender_job.py` does not print the `joints` line described in step 1,
+and the `rig` action that joins pieces is not ported: list each piece's
+parent and pivot from the Blender scene, then create the Motor6Ds as
+`references/tools.md` describes. The original flow is:
 
 1. The Blender job's result ends its **moving pieces** line with `joints`:
    each piece, the piece it hangs from, its pivot, and for a leg the joint
@@ -210,8 +214,8 @@ read `Body`'s position and give the pivots in the world instead.
 
 ### A skinned creature
 
-A creature that bends along its length is one mesh skinned to bones (the
-building skill's `references/blender.md`, "A creature that bends"). The
+A creature that bends along its length is one mesh skinned to bones
+(modelled and weighted in Blender; this skill has no skinning helper). The
 upload keeps its bones and weights: it arrives as one Model holding one
 MeshPart, with the armature's bones inside it as `Bone`s. A bone is a joint
 named after itself, so there are no joints to give:
@@ -253,9 +257,11 @@ named after itself, so there are no joints to give:
 ### An animation made in Blender
 
 Motion that Blender's tools make more easily than keys do (inverse
-kinematics, a constraint, a path) is animated there and baked: the building
-skill's `references/blender.md`, "Animating a creature in Blender". The job's
-result names a file; pass it as animation_file in place of `animation`:
+kinematics, a constraint, a path) is animated there and baked with
+`fx.export_animation` in `scripts/vfx_blender.py`. The job's result names a
+file; the original toolkit passes it as animation_file in place of
+`animation`. In this edition, `scripts/animate.mjs` does not read that file,
+so compile and verify such motion with the original toolkit or as pose JSON:
 
 ```text
 { "action": "build", "animation_file": "<path from the job's result>", "parent": "game.ServerStorage.Animations" }
