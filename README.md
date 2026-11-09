@@ -42,7 +42,7 @@ A project can supply its own asset gallery as a `.rbxl` or smaller `.rbxm` prefa
 
 [Download VFX-Pack-KanzeroGaming.rbxm](https://github.com/KanzeroG/roblox-vfx-animation/raw/refs/heads/main/assets/VFX-Pack-KanzeroGaming.rbxm) and import it into Roblox Studio with **Explorer → Insert → Import Roblox Model**. The library contains particle emitters, meshes, beams, and trails. Use it as a gallery when selecting layers for a new effect.
 
-The migrated image references point to assets owned by **@KanzeroGaming**. Roblox checks access to restricted images, meshes, and sounds in the destination experience. The asset owner can grant access or set eligible assets to Open Use. A few texture slots are empty because the source image was unavailable or was referenced through a place-local alias. [Roblox asset permissions](https://create.roblox.com/docs/projects/assets/privacy)
+Most meshes in the pack are uploaded by the **Kanzero Games** group. The particle, beam, and decal textures are public Creator Store images that remain owned by their original creators. Roblox checks access to restricted images, meshes, and sounds in the destination experience. If an asset does not load there, its owner can grant access or set it to Open Use. [Roblox asset permissions](https://create.roblox.com/docs/projects/assets/privacy)
 
 ## Source and license
 
