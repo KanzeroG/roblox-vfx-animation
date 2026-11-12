@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: photocraft-sword-slash-layers
+expected_outcome: |
+  Four white, transparent 1024x1024 4x4 flipbook sheets of a sword slash (hot core, body, rim, glow) drawn procedurally in PhotoCraft from polygon points, with grow / peak / break-apart stages, tapered ends, flow-raked torn edges and inner rips, every cell keeping at least 4 empty pixels to its edge, checked with a rendered review before delivery.
