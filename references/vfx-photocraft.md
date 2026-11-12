@@ -159,6 +159,46 @@ guaranteed margins. Generated shapes give texture and style but need cleanup.
 They can be mixed: generate a textured body, and draw the core, rim, and
 shards procedurally on top.
 
+### One image per layer, matched in PhotoCraft
+
+An image generator returns one finished picture. Asked for a whole slash, it
+bakes the colours in and fuses core, body, and glow, so the layers cannot be
+tinted or faded on their own in Roblox. Ask it for one white layer per image
+instead, and let PhotoCraft make the layers agree:
+
+1. **Body first, once per stage.** Generate the body for each stage that
+   changes shape (grow, peak, break apart), three or four images rather than
+   sixteen. The body sets the silhouette that every other layer follows.
+2. **Core and rim from the body.** Generate them with the body attached as a
+   reference, so the composition matches: `codex exec -i body_peak.png ...`.
+   The `gpt-image.sh` wrapper has no `-i` option, so call `codex exec`
+   directly with the same sandbox handoff. In the prompt, ask for only that
+   part of the same shape, in the same position and scale. Or draw the core
+   and rim procedurally on the generated body.
+3. **Match in PhotoCraft.** Place every layer of a frame with the same
+   `doc_place` `center` and `scale` as its body. Trim the core and rim to the
+   body's alpha so nothing leaks outside it:
+   `select.loadSelection {channel: "transparency", layer: <body>}`, then
+   `layer.layerMask.revealSelection`, `layer.rasterize.smartObject` (a
+   placed file is a Smart Object, which cannot apply a mask), and
+   `layer.layerMask.apply` on the core and on the rim. A clipping mask is not
+   enough, because each role is exported without the body and a clipped layer
+   hides with its base. In a test, a core shifted 40 px off the body had 5,706
+   pixels outside it, and none after this trim. Then
+   merge each role into its own document and force it white with
+   `layer.layerStyle.colorOverlay`.
+4. **Glow from the result, never generated.** Duplicate body and core into
+   the glow document, merge, blur, and set the opacity. A glow that is
+   derived always sits under its shape.
+5. Check the overlap on the dark preview, with the layers tinted differently,
+   before running the sheet checks.
+
+The trim in step 3 was tested in PhotoCraft. Generating with the body
+attached (step 2) is not yet tested, so look at the first core before
+generating the rest. The trim stops leaks but cannot move a core that lands
+in the wrong place. Say so in the report if the generated layers do not line
+up.
+
 ## Check before delivering
 
 1. `node SKILL_DIR/scripts/photocraft/sheet-verify.mjs <dir> 4` checks every
