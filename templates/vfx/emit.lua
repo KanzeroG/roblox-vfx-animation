@@ -7,6 +7,13 @@
 --   local handle = VFX.play(game.ReplicatedStorage.VFX.Slam, hitCFrame)
 --   handle:freeze(0.06)          -- hitstop
 --   VFX.emit(sword.Blade)        -- an effect already in place (a weapon, an aura)
+--   VFX.play(VFX_FOLDER.Slam, cf, { scale = 0.6, tint = Color3.fromRGB(120, 255, 140) })
+--                                -- one template, any size and colour
+--   VFX.play(template, cf, { countScale = 0.5 })   -- half the particles on a low-end client
+--
+-- play options: scale (uniform, about the template's pivot), tint (multiplies
+-- every authored colour, so it recolours white textures and only darkens
+-- coloured ones), countScale (multiplies EmitCount and Rate; emit() takes it too).
 --
 -- Attributes it reads:
 --   ParticleEmitter  EmitDelay, EmitCount (a burst), EmitDuration (emit at Rate for that long)
@@ -38,6 +45,8 @@ local VFX = {}
 local MAX_EMIT_COUNT = 500
 local MAX_EFFECT_SECONDS = 30
 local DEFAULT_MESH_SECONDS = 0.4
+local MIN_SCALE, MAX_SCALE = 0.05, 20
+local MAX_LIGHT_RANGE = 60
 
 local function numberAttribute(instance, name, default)
 	local value = instance:GetAttribute(name)
@@ -96,12 +105,14 @@ function Handle:_emitter(emitter)
 	-- design; the handle's time scale multiplies it rather than replacing it.
 	local authored = emitter.TimeScale
 	self._timeScales[emitter] = authored
-	self._restore[emitter] = { Enabled = emitter.Enabled, TimeScale = authored }
+	self._restore[emitter] = { Enabled = emitter.Enabled, TimeScale = authored, Rate = emitter.Rate }
 	emitter.Enabled = false
+	emitter.Rate *= self._countScale
 	local lifetime = emitter.Lifetime.Max / math.max(authored, 0.05)
 	if count ~= nil then
-		local bounded = math.clamp(math.floor(count), 0, MAX_EMIT_COUNT)
-		if bounded ~= count then
+		local scaled = count * self._countScale
+		local bounded = math.clamp(math.floor(scaled + 0.5), 0, MAX_EMIT_COUNT)
+		if bounded < math.floor(scaled + 0.5) then
 			warn(`VFXEmit: {emitter:GetFullName()} EmitCount {count} was bounded to {bounded}`)
 		end
 		self:_at(delay, function()
@@ -335,6 +346,88 @@ function Handle:stop()
 	end
 end
 
+local function scaleNumbers(sequence, factor)
+	local keypoints = {}
+	for _, key in sequence.Keypoints do
+		table.insert(keypoints, NumberSequenceKeypoint.new(key.Time, key.Value * factor, key.Envelope * factor))
+	end
+	return NumberSequence.new(keypoints)
+end
+
+local function tintColor(color, tint)
+	return Color3.new(color.R * tint.R, color.G * tint.G, color.B * tint.B)
+end
+
+local function tintColors(sequence, tint)
+	local keypoints = {}
+	for _, key in sequence.Keypoints do
+		table.insert(keypoints, ColorSequenceKeypoint.new(key.Time, tintColor(key.Value, tint)))
+	end
+	return ColorSequence.new(keypoints)
+end
+
+-- Resizes an owned copy about `pivot` before it is placed. Parts keep their
+-- rotation and move away from the pivot; everything measured in studs grows.
+-- A SpecialMesh that is not a FileMesh already follows its part's Size.
+local function scaleEffect(root, pivot, factor)
+	local everything = root:GetDescendants()
+	table.insert(everything, root)
+	for _, instance in everything do
+		if instance:IsA("BasePart") then
+			local relative = pivot:ToObjectSpace(instance.CFrame)
+			instance.Size *= factor
+			instance.CFrame = pivot * (relative - relative.Position + relative.Position * factor)
+		elseif instance:IsA("Attachment") then
+			instance.Position *= factor
+		elseif instance:IsA("SpecialMesh") then
+			instance.Offset *= factor
+			if instance.MeshType == Enum.MeshType.FileMesh then
+				instance.Scale *= factor
+			end
+		elseif instance:IsA("ParticleEmitter") then
+			instance.Size = scaleNumbers(instance.Size, factor)
+			instance.Speed = NumberRange.new(instance.Speed.Min * factor, instance.Speed.Max * factor)
+			instance.Acceleration *= factor
+		elseif instance:IsA("Beam") then
+			instance.Width0 *= factor
+			instance.Width1 *= factor
+			instance.CurveSize0 *= factor
+			instance.CurveSize1 *= factor
+		elseif instance:IsA("Trail") then
+			instance.MinLength *= factor
+		elseif isLight(instance) then
+			instance.Range = math.min(instance.Range * factor, MAX_LIGHT_RANGE)
+		end
+	end
+end
+
+-- Multiplies every authored colour by `tint`. Textures keep their own colour,
+-- so a tint recolours white art and only darkens art that is already coloured.
+local function tintEffect(root, tint)
+	local everything = root:GetDescendants()
+	table.insert(everything, root)
+	for _, instance in everything do
+		if instance:IsA("ParticleEmitter") or instance:IsA("Beam") or instance:IsA("Trail") then
+			instance.Color = tintColors(instance.Color, tint)
+		elseif instance:IsA("BasePart") then
+			instance.Color = tintColor(instance.Color, tint)
+		elseif instance:IsA("Decal") or isLight(instance) then
+			instance.Color = tintColor(instance.Color, tint)
+		end
+	end
+end
+
+local function positiveNumber(value, name, default, low, high)
+	if value == nil then
+		return default
+	end
+	if typeof(value) ~= "number" or value ~= value or value <= 0 then
+		warn(`VFXEmit: option {name} should be a positive number, got {tostring(value)}`)
+		return default
+	end
+	return math.clamp(value, low, high)
+end
+
 local function start(root, owned, options)
 	options = options or {}
 	local self = setmetatable({
@@ -351,6 +444,7 @@ local function start(root, owned, options)
 		_restore = {},
 		_ending = 0,
 		_onDone = options.onDone,
+		_countScale = positiveNumber(options.countScale, "countScale", 1, 0.01, 10),
 	}, Handle)
 	self:_collect(root)
 	local override = numberAttribute(root, "EffectDuration", nil)
@@ -370,17 +464,30 @@ end
 
 -- Clones `template` (a Model or a BasePart), places it at `cframe`, plays it
 -- and destroys the copy when the last particle is gone.
--- options: { parent: Instance?, timeScale: number?, onDone: (() -> ())? }
+-- options: { parent: Instance?, timeScale: number?, onDone: (() -> ())?,
+--            scale: number?, tint: Color3?, countScale: number? }
 function VFX.play(template, cframe, options)
 	options = options or {}
 	local copy = template:Clone()
-	if copy:IsA("Model") then
-		copy:PivotTo(cframe)
-	elseif copy:IsA("BasePart") then
-		copy.CFrame = cframe
-	else
+	if not copy:IsA("Model") and not copy:IsA("BasePart") then
 		copy:Destroy()
 		error(`VFXEmit.play: {template:GetFullName()} must be a Model or a BasePart`)
+	end
+	local factor = positiveNumber(options.scale, "scale", 1, MIN_SCALE, MAX_SCALE)
+	if factor ~= 1 then
+		scaleEffect(copy, if copy:IsA("Model") then copy:GetPivot() else copy.CFrame, factor)
+	end
+	if options.tint ~= nil then
+		if typeof(options.tint) == "Color3" then
+			tintEffect(copy, options.tint)
+		else
+			warn(`VFXEmit: option tint should be a Color3, got {typeof(options.tint)}`)
+		end
+	end
+	if copy:IsA("Model") then
+		copy:PivotTo(cframe)
+	else
+		copy.CFrame = cframe
 	end
 	copy.Parent = options.parent or workspace
 	return start(copy, true, options)
@@ -388,8 +495,13 @@ end
 
 -- Plays the effects under `root` where they already are, and restores them
 -- afterwards. For an effect that lives on a weapon or a character.
+-- options: { timeScale: number?, onDone: (() -> ())?, countScale: number? }
 function VFX.emit(root, options)
 	return start(root, false, options)
 end
+
+-- Exposed for headless tests (tests/emit-scale.luau); play() calls them on its copy.
+VFX._scaleEffect = scaleEffect
+VFX._tintEffect = tintEffect
 
 return VFX

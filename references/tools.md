@@ -46,7 +46,9 @@ return "installed " .. m:GetFullName()
 ```
 
 (If the file contained `]==]`, pick a longer bracket level. If your MCP has a
-script-writing tool such as `multi_edit`, it works as well.)
+script-writing tool such as `multi_edit`, it works as well. To skip pasting,
+serve `templates/vfx/` on localhost and read it with `HttpService:GetAsync`;
+see [engine-traps.md](engine-traps.md#studio-mcp).)
 
 - `Emit` and `Capture` are needed for every effect; `Build` whenever you
   build from JSON steps.
@@ -82,6 +84,24 @@ return Build.run("game.ReplicatedStorage.VFX.Slam", [==[
   "attachment0": "$a", "attachment1": "$b"}` in the same batch.
 - The build is one undo step. A failed build is rolled back and the result
   names the step that failed.
+- To start from a pack effect instead of writing steps, export it with
+  `inspect-pack.luau recipe` ([asset-library.md](asset-library.md#export-a-layer-as-a-recipe)).
+
+## Reusing one effect at another size or colour
+
+`VFX.play(template, cframe, options)` takes three options for its copy:
+
+- `scale` resizes it about the template's pivot: part sizes and offsets,
+  attachments, particle size, speed and acceleration, beam widths and curves,
+  trail `MinLength`, and light range (capped at 60).
+- `tint` (a Color3) multiplies every authored colour. It recolours white art
+  and only darkens coloured art.
+- `countScale` multiplies `EmitCount` and `Rate`, for example 0.5 on a
+  low-end client. `VFX.emit` takes it too and puts `Rate` back afterwards.
+
+```luau
+VFX.play(game.ReplicatedStorage.VFX.Slam, cf, { scale = 0.6, tint = Color3.fromRGB(120, 255, 140) })
+```
 
 ## Checking an effect: the VFXCapture flow
 

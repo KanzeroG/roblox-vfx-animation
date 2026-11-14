@@ -325,6 +325,11 @@ function layerPath(kind, only) {
   return { subpaths, fillRule: "nonzero" };
 }
 
+// The first argument is a path it writes to, so a flag there would become a stray file.
+if (process.argv.slice(2).some((arg) => arg.startsWith("-"))) {
+  console.error("Usage: node slash-gen.mjs [steps.json] [output dir under the PhotoCraft write root]");
+  process.exit(process.argv.includes("--help") || process.argv.includes("-h") ? 0 : 1);
+}
 const STEPS_FILE = resolve(process.argv[2] ?? "slash-steps.json");
 const OUT_DIR = process.argv[3] ?? "vfx_output/sword_slash";
 const LAYERS = [

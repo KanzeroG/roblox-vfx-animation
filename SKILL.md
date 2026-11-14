@@ -75,7 +75,12 @@ pickup.
    - measured archives: [Hollow Purple](references/hollow-purple/README.md),
      [Explosion](references/explosion-patterns/README.md),
      [Lightning](references/lightning-sequence.md), and
-     [team patterns](references/place1-reference-patterns.md).
+     [team patterns](references/place1-reference-patterns.md);
+   - [engine-traps.md](references/engine-traps.md) for measured engine
+     behaviour that breaks effects without an error.
+
+   To reuse one effect at another size or colour, pass `scale`, `tint` or
+   `countScale` to `VFX.play` ([tools.md](references/tools.md#reusing-one-effect-at-another-size-or-colour)).
 5. **Review.** Hold 4–6 meaningful moments with `templates/vfx/capture.lua`.
    Screenshot them from close up and from the viewing distance, then check
    full-speed timing ([vfx-polish.md](references/vfx-polish.md)). When matching
@@ -112,7 +117,8 @@ Rules for every effect:
    and set `AnimationTrack.Priority` deliberately. Fire gameplay cues, such as
    a hit landing, and the attack's effect from `GetMarkerReachedSignal()` on a
    keyframe's `markers`. A keyframe's `name` is not a marker. Playback details:
-   [full.md](references/full.md).
+   [full.md](references/full.md). Use `CubicV2` easing, not legacy `Cubic`
+   ([engine-traps.md](references/engine-traps.md#animation)).
 5. An NPC needs its own loader: put `templates/npc/ModelAnimate.server.lua` in
    the model and wire its animations through attributes
    ([character-animation.md](references/character-animation.md#npcs)).
@@ -131,5 +137,6 @@ Rules for every effect:
 | `scripts/photocraft/` | PhotoCraft MCP stdio client, sword-slash layer generator, sheet margin verifier, and review render. |
 | `scripts/texture-tool.mjs` | Checks flipbook sheets, and previews textures in Studio without uploading. |
 | `scripts/upload.mjs` | Open Cloud uploads of textures, meshes, and animations. |
-| `scripts/inspect-pack.luau` | Searches the VFX Pack and extracts one model, with Lune (pinned in `aftman.toml`). |
+| `scripts/inspect-pack.luau` | Searches the VFX Pack, extracts one model, or exports it as `build.lua` steps (`recipe`), with Lune (pinned in `aftman.toml`). |
+| `tests/` | Headless checks: `lune run tests/emit-scale.luau`, `node tests/animate-recipes.mjs`, `node tests/sheet-verify.mjs`. Each one also breaks its target on purpose and must catch it. |
 | `assets/VFX-Pack-KanzeroGaming.rbxm` | The bundled VFX Pack of emitters, meshes, beams, and trails. |
