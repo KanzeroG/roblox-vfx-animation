@@ -24,6 +24,23 @@ lune run scripts/inspect-pack.luau extract assets/VFX-Pack-KanzeroGaming.rbxm 1/
 
 When a selected Beam or Trail has sibling endpoints, extraction picks a parent containing both attachments and checks the links after serialization. A standalone emitter can be placed under an Attachment or BasePart in the destination.
 
+## Export a layer as a recipe
+
+`recipe` writes the same selection as JSON steps for `templates/vfx/build.lua`, so you can read, diff and tune every emitter value as text and rebuild it in any place:
+
+~~~sh
+lune run scripts/inspect-pack.luau recipe assets/VFX-Pack-KanzeroGaming.rbxm 1/43 HealAoe.json
+~~~
+
+- Each class has a fixed property list, named property by property: Part, Attachment, ParticleEmitter, Beam, Trail and the three lights, plus number, string and boolean attributes. Other classes are skipped with their children, and the command lists them.
+- The first part goes to the origin. Parts come back anchored and non-colliding.
+- A MeshPart comes back as a plain Part that holds its emitters, beams and trails, because a script cannot set `MeshId`. Take the mesh itself with `extract`.
+- Beam and Trail links become `link` steps.
+- Build it with `Build.run("game.ReplicatedStorage.VFX.HealAoe", json)`, then play it with `VFX.play` and its `scale`, `tint` and `countScale` options ([tools.md](tools.md)).
+- Pack emitters usually carry no `EmitCount` or `EmitDuration`, so `VFX.play` has nothing to fire. Before you play the effect, add those attributes in the JSON, and `Rate: 0` on burst layers.
+
+Checked 2026-11-14: HealAoe (5 emitters) and a linked Beam rebuilt in Studio with every texture and both links in place.
+
 ## Apply the selected assets
 
 1. Break the image into roles such as silhouette, underlay, core, directional streak, and residue. Select the smallest set of parts, meshes, beams, or emitters that can reproduce those roles. Compare each candidate's shape at the intended gameplay distance.

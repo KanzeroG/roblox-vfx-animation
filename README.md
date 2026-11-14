@@ -44,6 +44,18 @@ A project can supply its own asset gallery as a `.rbxl` or smaller `.rbxm` prefa
 
 Most meshes in the pack are uploaded by the **Kanzero Games** group. The particle, beam, and decal textures are public Creator Store images that remain owned by their original creators. Roblox checks access to restricted images, meshes, and sounds in the destination experience. If an asset does not load there, its owner can grant access or set it to Open Use. [Roblox asset permissions](https://create.roblox.com/docs/projects/assets/privacy)
 
+## Run the tests
+
+From the skill folder, with Node 18+ and Lune (`aftman install`):
+
+```sh
+lune run tests/emit-scale.luau
+node tests/animate-recipes.mjs
+node tests/sheet-verify.mjs
+```
+
+They cover the effect player's scale and tint, every animation recipe in `references/character-animation.md`, and the flipbook sheet checker. Each one also breaks its target on purpose and must catch it. They do not replace a look in Studio.
+
 ## Source and license
 
 This project builds on [adnvli/vfxskill](https://github.com/adnvli/vfxskill) and keeps its original [MIT license](LICENSE) and [third-party notices](third_party/roblox-brain-LICENSE.txt). See [credits](CREDITS.md) for the upstream revision. Referenced Roblox assets retain their own terms and permissions.
