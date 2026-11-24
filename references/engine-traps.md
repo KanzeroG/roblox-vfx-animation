@@ -68,6 +68,19 @@ measuring again.
   `GetAsync`, and set it as a ModuleScript's `Source`. This avoids pasting a
   10–20 KB module into one call. Bind to `127.0.0.1` only, serve a folder that
   holds only those files, and stop the server when you are done.
+  Not every MCP build allows it: the Studio Assistant's built-in MCP refused
+  with `HttpService request denied: domain 127.0.0.1:8766 is not in the
+  Assistant HTTP allowlist`. When that happens, paste the source instead.
+- **Check which place an MCP instance has open before you change anything.**
+  `game.Name` can read "Place1" in a published game. Use the `name`, `placeId`
+  and `persistedToCloud` that `list_roblox_studios` returns, and work only in
+  the place the user named for testing.
+
+## Lune
+
+- **Lune 0.10.5's `CFrame.lookAt` gets the Z axis wrong.** Looking from the
+  origin toward `(0, 0, -10)` gives a `LookVector` of `(0, 0, 1)`; toward
+  `(10, 0, 0)` it is correct. Test camera facing in Studio, not in Lune.
 
 ## Reported elsewhere, not reproduced here
 
